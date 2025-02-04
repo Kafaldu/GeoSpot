@@ -1,7 +1,4 @@
-import eslint from 'eslint';
 import pluginReact from 'eslint-plugin-react';
-
-const { Linter } = eslint;
 
 export default [
   {
@@ -16,9 +13,9 @@ export default [
         node: true,
       },
       plugins: {
-        react: pluginReact,
+        react: pluginReact, // Define the plugin here directly
       },
     },
   },
-  pluginReact.configs.recommended,
+  pluginReact.configs.recommended, // Use the recommended config from the plugin
 ];
