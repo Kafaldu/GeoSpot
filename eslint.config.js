@@ -15,6 +15,9 @@ export default [
         browser: true,
         node: true,
       },
+      plugins: {
+        react: pluginReact,
+      },
     },
   },
   pluginReact.configs.recommended,
