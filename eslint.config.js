@@ -1,4 +1,5 @@
-import { defineConfig } from 'eslint';
+import eslint from 'eslint';
+const { defineConfig } = eslint;
 
 export default defineConfig({
   extends: [
