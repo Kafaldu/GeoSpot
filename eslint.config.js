@@ -1,7 +1,4 @@
-import eslint from 'eslint';
-const { defineConfig } = eslint;
-
-export default defineConfig({
+export default {
   extends: [
     'eslint:recommended',
     'plugin:react/recommended',
@@ -14,4 +11,4 @@ export default defineConfig({
     browser: true,
     node: true,
   },
-});
+};
