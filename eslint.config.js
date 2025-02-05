@@ -1,21 +1,26 @@
-import pluginReact from 'eslint-plugin-react';
+import pluginReact from "eslint-plugin-react";
 
 export default [
   {
-    files: ['**/*.{js,mjs,cjs,jsx}'],
+    files: ["**/*.{js,mjs,cjs,jsx}"],
     languageOptions: {
-      parserOptions: {
-        ecmaVersion: 2020,
-        sourceType: 'module',
-      },
-      env: {
-        browser: true,
-        node: true,
-      },
-      plugins: {
-        react: pluginReact, // Define the plugin here directly
+      ecmaVersion: "latest",
+      sourceType: "module",
+      globals: {
+        window: "readonly",
+        document: "readonly",
+        console: "readonly",
+        process: "readonly",
       },
     },
-  },
-  pluginReact.configs.recommended, // Use the recommended config from the plugin
+    plugins: {
+      react: pluginReact, // Flat Config format
+    },
+    settings: {
+      react: {
+        version: "detect", // Automatically detects the installed React version
+      },
+    },
+    rules: pluginReact.configs.recommended.rules, 
+  }
 ];
