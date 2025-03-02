@@ -4,31 +4,22 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint ."
+    "dev": "nodemon backend/server.js"
   },
   "repository": {
-    "type": "git",
+    "type": "module",
     "url": "git+https://github.com/Kafaldu/GeoSpot.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "Karan Faldu, Giuliano DiLorenzo, Kassahun Sanayew, Jack Worth",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/Kafaldu/GeoSpot/issues"
   },
   "homepage": "https://github.com/Kafaldu/GeoSpot#readme",
-  "devDependencies": {
-    "@eslint/js": "^9.19.0",
-    "eslint": "^9.19.0",
-    "eslint-plugin-react": "^7.37.4",
-    "eslint-plugin-react-hooks": "^5.1.0",
-    "globals": "^15.14.0"
-  },
   "dependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
-  },
-  "type": "module"
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mongoose": "^8.11.0"
+  }
 }
-
