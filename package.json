@@ -1,0 +1,25 @@
+{
+  "name": "geospot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon backend/server.js"
+  },
+  "repository": {
+    "type": "module",
+    "url": "git+https://github.com/Kafaldu/GeoSpot.git"
+  },
+  "keywords": [],
+  "author": "Karan Faldu, Giuliano DiLorenzo, Kassahun Sanayew, Jack Worth",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Kafaldu/GeoSpot/issues"
+  },
+  "homepage": "https://github.com/Kafaldu/GeoSpot#readme",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mongoose": "^8.11.0"
+  }
+}
