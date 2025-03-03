@@ -1,8 +1,21 @@
+import { useState } from "react";
 import { Box, Button, Input, Text, VStack, Heading, Icon } from "@chakra-ui/react";
-import { FaStar } from "react-icons/fa";
+import { FaMapMarkerAlt } from "react-icons/fa";
 import { Link } from "react-router-dom";
 
 const LoginPage = () => {
+  const [formData, setFormData] = useState({ email: "", username: "", password: "" });
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log("Login Attempt:", formData);
+    // Add authentication logic here (API call to backend)
+  };
+
   return (
     <Box
       minH="100vh"
@@ -20,10 +33,12 @@ const LoginPage = () => {
       </Heading>
 
       {/* Icon */}
-      <Icon as={FaStar} boxSize={10} mt={3} />
+      <Icon as={FaMapMarkerAlt} boxSize={10} mt={3} />
 
       {/* Login Form */}
       <Box 
+        as="form"
+        onSubmit={handleSubmit} // ✅ Form submission handling
         w="90%" 
         maxW="400px" 
         mt={5} 
@@ -34,36 +49,51 @@ const LoginPage = () => {
       >
         <VStack spacing={4} width="100%">
           <Input 
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
             placeholder="Email" 
             bg="green.400" 
             color="black" 
             borderRadius="md"
             _placeholder={{ color: "black" }}
+            aria-label="Email Address"
           />
           <Input 
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
             placeholder="Username" 
             bg="green.400" 
             color="black" 
             borderRadius="md"
             _placeholder={{ color: "black" }}
+            aria-label="Username"
           />
           <Input 
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
             placeholder="Password" 
             type="password" 
             bg="green.400" 
             color="black" 
             borderRadius="md"
             _placeholder={{ color: "black" }}
+            aria-label="Password"
           />
-          <Text fontSize="sm" color="gray.400">
-            forgot password?
-          </Text>
+          <Link to={"/ForgotPassword"}>
+            <Text fontSize="sm" color="gray.400" _hover={{ textDecoration: "underline" }}>
+              Forgot password?
+            </Text>
+          </Link>
           <Link to={"/signup"}>
-            <Text as='span' color={"blue.500"} _hover={{ textDecoration: 'underline' }}>
-                Sign up?
+            <Text as="span" color={"blue.500"} _hover={{ textDecoration: "underline" }}>
+              Sign up?
             </Text>
           </Link>
           <Button 
+            type="submit" 
             width="full" 
             bg="green.400" 
             color="black" 

@@ -4,6 +4,7 @@ import { useColorMode } from '@chakra-ui/react';
 import SignUpPage from './pages/SignUp';
 import LoginPage from './pages/LogIn';
 import WelcomePage from './pages/Welcome';
+import ForgotPassword from './pages/ForgotPassword';
 
 console.log("App component is rendering...");
 
@@ -16,6 +17,7 @@ function App() {
                 <Route path="/signup" element={<SignUpPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/" element={<WelcomePage />} />
+                <Route path="/ForgotPassword" element={<ForgotPassword />} />
             </Routes>
         </Box>
     );

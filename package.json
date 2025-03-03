@@ -1,13 +1,14 @@
 {
   "name": "learning-mern",
   "version": "1.0.0",
+  "type": "module",
   "main": "backend/server.js",
-"scripts": {
-  "dev": "cross-env NODE_ENV=development nodemon backend/server.js",
-  "start": "node -e \"if (process.platform === 'darwin') require('child_process').execSync('chmod +x node_modules/.bin/cross-env')\" && npm install && npm install --prefix frontend && npm run build --prefix frontend && cross-env NODE_ENV=production node backend/server.js"
-},
+  "scripts": {
+    "dev": "cross-env NODE_ENV=development nodemon backend/server.js",
+    "start": "node -e \"if (process.platform === 'darwin') require('child_process').execSync('chmod +x node_modules/.bin/cross-env')\" && npm install && npm install --prefix frontend && npm run build --prefix frontend && cross-env NODE_ENV=production node backend/server.js"
+  },
   "repository": {
-    "type": "module",
+    "type": "git",
     "url": "git+https://github.com/Kafaldu/GeoSpot.git"
   },
   "keywords": [
@@ -31,6 +32,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "firebase": "^11.4.0",
     "framer-motion": "^12.4.7",
     "mongoose": "^8.11.0",
     "react-icons": "^5.5.0",

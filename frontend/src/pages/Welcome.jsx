@@ -1,5 +1,5 @@
 import { Box, Button, Text, VStack, Heading, Icon } from "@chakra-ui/react";
-import { FaStar } from "react-icons/fa";
+import { FaMapMarkerAlt } from "react-icons/fa";
 import { Link } from "react-router-dom";
 
 const WelcomePage = () => {
@@ -20,7 +20,7 @@ const WelcomePage = () => {
           </Heading>
     
           {/* Icon */}
-          <Icon as={FaStar} boxSize={10} mt={3} />
+          <Icon as={FaMapMarkerAlt} boxSize={10} mt={3} />
           <Box 
             w="90%" 
             maxW="400px" 
