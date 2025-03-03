@@ -1,16 +1,23 @@
 {
-  "name": "geospot",
+  "name": "learning-mern",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "type": "module",
+  "main": "backend/server.js",
   "scripts": {
-    "dev": "nodemon backend/server.js"
+    "dev": "cross-env NODE_ENV=development nodemon backend/server.js",
+    "start": "node -e \"if (process.platform === 'darwin') require('child_process').execSync('chmod +x node_modules/.bin/cross-env')\" && npm install && npm install --prefix frontend && npm run build --prefix frontend && cross-env NODE_ENV=production node backend/server.js"
   },
   "repository": {
-    "type": "module",
+    "type": "git",
     "url": "git+https://github.com/Kafaldu/GeoSpot.git"
   },
-  "keywords": [],
+  "keywords": [
+    "mern",
+    "full-stack",
+    "express",
+    "mongoose",
+    "node"
+  ],
   "author": "Karan Faldu, Giuliano DiLorenzo, Kassahun Sanayew, Jack Worth",
   "license": "ISC",
   "bugs": {
@@ -18,8 +25,21 @@
   },
   "homepage": "https://github.com/Kafaldu/GeoSpot#readme",
   "dependencies": {
+    "@chakra-ui/icons": "^2.1.1",
+    "@chakra-ui/react": "^2.10.3",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "mongoose": "^8.11.0"
+    "framer-motion": "^12.4.7",
+    "mongoose": "^8.11.0",
+    "react-icons": "^5.5.0",
+    "react-router-dom": "^7.2.0"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "nodemon": "^3.1.9",
+    "vite-tsconfig-paths": "^5.1.4"
   }
 }
