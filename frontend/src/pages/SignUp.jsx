@@ -1,100 +1,71 @@
-import { useState } from "react";
-import { Box, Button, Input, Text, VStack, Heading, Icon } from "@chakra-ui/react";
-import { FaUserPlus, FaGoogle } from "react-icons/fa";
-import { Link, useNavigate } from "react-router-dom";
-import { auth, googleProvider, db } from "../firebaseConfig";
-import { createUserWithEmailAndPassword, signInWithPopup, updateProfile } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import React, { useState } from "react";
+import { Box, Container, Input, useColorModeValue, VStack, Heading, Button, Text } from "@chakra-ui/react";
+import { useToast } from "@chakra-ui/react";
+import { Link } from "react-router-dom";
+import { FaUserPlus } from "react-icons/fa";
+import { useUserStore } from "../creator/user"; // Import the user store
+import { auth, googleProvider } from "../firebaseConfig"; // Import Firebase authentication
+import { signInWithPopup } from "firebase/auth"; // Modular import
 
 const SignUpPage = () => {
-  const [formData, setFormData] = useState({ email: "", username: "", password: "", confirmPassword: "" });
-  const [error, setError] = useState("");
-  const navigate = useNavigate(); 
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  const [newUser, setNewUser] = useState({
+    username: "",
+    email: "",
+    password: "",
+  });
+  const [error, setError] = useState(""); // Declare the error state
+  const [isGoogleSignUp, setIsGoogleSignUp] = useState(false); // To toggle between regular and Google sign-up
+  const { createUser } = useUserStore(); // Adjust this line to your user store
+  const toast = useToast();
 
   const handleSignUp = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevent the default form submission
+    setError(""); // Reset error before new sign-up attempt
 
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-
-    try {
-      // Create user in Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-      const user = userCredential.user;
-
-      console.log("Firebase User Created:", user);
-
-      // Update the user's Firebase profile
-      await updateProfile(user, { displayName: formData.username });
-
-      // Store user in Firestore
-      await setDoc(doc(db, "users", user.uid), {
-        uid: user.uid,
-        username: formData.username,
-        email: formData.email,
-        createdAt: new Date(),
+    const { success, message } = await createUser(newUser);
+    if (!success) {
+      setError(message); // Set error message if creation fails
+      toast({
+        title: "Error",
+        description: message,
+        status: "error",
+        isClosable: true,
       });
-
-      // Send user data to backend (MongoDB storage)
-      const response = await fetch("http://localhost:3000/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: user.email, username: formData.username, uid: user.uid }),
+    } else {
+      toast({
+        title: "Success",
+        description: message,
+        status: "success",
+        isClosable: true,
       });
-
-      const data = await response.json();
-      console.log("API Response (MongoDB):", data); 
-
-      setError("");
-      navigate("/"); 
-    } catch (err) {
-      setError(err.message);
-      console.error("Signup Error:", err);
+      setNewUser({
+        username: "",
+        email: "",
+        password: "",
+      }); // Reset form if successful
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignUp = async () => {
     try {
-      const userCredential = await signInWithPopup(auth, googleProvider);
-      const user = userCredential.user;
-
-      console.log("Google User Signed In:", user);
-
-      // Check if user already exists in Firestore
-      const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
-
-      if (!userSnap.exists()) {
-        // Store new user in Firestore
-        await setDoc(userRef, {
-          uid: user.uid,
-          username: user.displayName,
-          email: user.email,
-          createdAt: new Date(),
-        });
-
-        // Send new user to MongoDB backend
-        const response = await fetch("http://localhost:3000/api/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: user.email, username: user.displayName, uid: user.uid }),
-        });
-
-        const data = await response.json();
-        console.log("API Response (MongoDB - Google):", data);
-      }
-
-      setError("");
-      navigate("/");
-    } catch (err) {
-      setError(err.message);
-      console.error("Google Signup Error:", err);
+      // Use the modular API's signInWithPopup
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      // Handle user data (store, show, etc.)
+      toast({
+        title: "Success",
+        description: "Successfully signed up with Google",
+        status: "success",
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error("Error during Google sign-in:", error);
+      toast({
+        title: "Error",
+        description: error.message,
+        status: "error",
+        isClosable: true,
+      });
     }
   };
 
@@ -110,33 +81,132 @@ const SignUpPage = () => {
       textAlign="center"
     >
       {/* Title */}
-      <Heading size="2xl" fontWeight="bold">Create an Account</Heading>
+      <Heading size="2xl" fontWeight="bold" mb={10}>Create an Account</Heading>
 
       {/* Icon */}
-      <Icon as={FaUserPlus} boxSize={10} mt={3} />
+      <FaUserPlus size={50} color="green.300" mt={3} mb={8} /> {/* Adjusted mb for space below icon */}
+
+      <Heading size="2xl" fontWeight="bold" mb={112}></Heading>
+
+
+      {/* Toggle Button */}
+      <Box display="flex" justifyContent="center" mb={4}>
+        <Button
+          onClick={() => setIsGoogleSignUp(false)}
+          colorScheme={isGoogleSignUp ? "black" : "green"}
+        >
+          Regular Sign Up
+        </Button>
+        <Button
+          onClick={() => setIsGoogleSignUp(true)}
+          colorScheme={isGoogleSignUp ? "green" : "black"}
+          ml={4}
+        >
+          Sign Up with Google
+        </Button>
+      </Box>
+
+
 
       {/* Sign Up Form */}
-      <Box as="form" onSubmit={handleSignUp} w="90%" maxW="400px" mt={5} p={5} display="flex" flexDirection="column" alignItems="center">
-        <VStack spacing={4} width="100%">
-          <Input name="email" value={formData.email} onChange={handleChange} placeholder="Email" bg="green.400" color="black" borderRadius="md" _placeholder={{ color: "black" }} />
-          <Input name="username" value={formData.username} onChange={handleChange} placeholder="Username" bg="green.400" color="black" borderRadius="md" _placeholder={{ color: "black" }} />
-          <Input name="password" value={formData.password} onChange={handleChange} placeholder="Password" type="password" bg="green.400" color="black" borderRadius="md" _placeholder={{ color: "black" }} />
-          <Input name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="Confirm Password" type="password" bg="green.400" color="black" borderRadius="md" _placeholder={{ color: "black" }} />
-
-          {error && <Text color="red.500">{error}</Text>}
-
-          <Button type="submit" width="full" bg="green.400" color="black" borderRadius="md" fontSize="lg" fontWeight="bold" _hover={{ bg: "green.500" }}>
-            SIGN UP
+      <Box
+        as="form"
+        onSubmit={handleSignUp}
+        w="90%"
+        maxW="400px"
+        mt={5}
+        p={5}
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        bg={"gray.700"}
+        borderRadius="md"
+        shadow="md"
+      >
+        {isGoogleSignUp ? (
+          // Google Sign-Up Form (Button only)
+          <Button
+            onClick={handleGoogleSignUp}
+            width="full"
+            bg="green.400"
+            color="black"
+            borderRadius="md"
+            fontSize="lg"
+            fontWeight="bold"
+            _hover={{ bg: "green.500" }}
+          >
+            Sign Up
           </Button>
+        ) : (
+          // Regular Sign-Up Form
+          <VStack spacing={4} width="100%">
+            {/* Username Input */}
+            <Input
+              name="username"
+              value={newUser.username}
+              onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+              placeholder="Username"
+              bg="green.400"
+              color="black"
+              borderRadius="md"
+              _placeholder={{ color: "black" }}
+            />
 
-          <Button onClick={handleGoogleSignIn} width="full" bg="red.500" color="white" leftIcon={<FaGoogle />} borderRadius="md" fontSize="lg" fontWeight="bold" _hover={{ bg: "red.600" }}>
-            Sign Up with Google
-          </Button>
+            {/* Email Input */}
+            <Input
+              name="email"
+              value={newUser.email}
+              onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+              placeholder="Email"
+              bg="green.400"
+              color="black"
+              borderRadius="md"
+              _placeholder={{ color: "black" }}
+            />
 
-          <Link to="/login">
-            <Text as="span" color="blue.500" _hover={{ textDecoration: "underline" }}>Already have an account? Log in</Text>
-          </Link>
-        </VStack>
+            {/* Password Input */}
+            <Input
+              name="password"
+              type="password"
+              value={newUser.password}
+              onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+              placeholder="Password"
+              bg="green.400"
+              color="black"
+              borderRadius="md"
+              _placeholder={{ color: "black" }}
+            />
+
+            {/* Error Message */}
+            {error && <Text color="red.500">{error}</Text>} {/* Display error */}
+
+            {/* Sign-Up Button */}
+            <Button
+              type="submit"
+              width="full"
+              bg="green.400"
+              color="black"
+              borderRadius="md"
+              fontSize="lg"
+              fontWeight="bold"
+              _hover={{ bg: "green.500" }}
+            >
+              Sign Up
+            </Button>
+          </VStack>
+        )}
+        <Heading  fontWeight="bold" mb={4}></Heading>
+        {/* Link to Login page */}
+        <Link to="/login">
+          <Text
+            as="span"
+            color="blue.500"
+            _hover={{ textDecoration: "underline" }}
+            mb = {6}
+          >
+            Already have an account? Log in
+          </Text>
+        </Link>
       </Box>
     </Box>
   );
