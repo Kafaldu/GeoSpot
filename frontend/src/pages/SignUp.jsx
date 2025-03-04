@@ -3,9 +3,10 @@ import { Box, Container, Input, useColorModeValue, VStack, Heading, Button, Text
 import { useToast } from "@chakra-ui/react";
 import { Link } from "react-router-dom";
 import { FaUserPlus } from "react-icons/fa";
-import { useUserStore } from "../creator/user"; // Import the user store
-import { auth, googleProvider } from "../firebaseConfig"; // Import Firebase authentication
-import { signInWithPopup } from "firebase/auth"; // Modular import
+import { useUserStore } from "../creator/user"; 
+import { auth, googleProvider } from "../firebaseConfig"; 
+import { signInWithPopup } from "firebase/auth"; 
+import { useNavigate } from "react-router-dom";
 
 const SignUpPage = () => {
   const [newUser, setNewUser] = useState({
@@ -13,53 +14,68 @@ const SignUpPage = () => {
     email: "",
     password: "",
   });
-  const [error, setError] = useState(""); // Declare the error state
-  const [isGoogleSignUp, setIsGoogleSignUp] = useState(false); // To toggle between regular and Google sign-up
-  const { createUser } = useUserStore(); // Adjust this line to your user store
+  const [error, setError] = useState(""); 
+  const [isGoogleSignUp, setIsGoogleSignUp] = useState(false); 
+  const { createUser } = useUserStore(); 
   const toast = useToast();
+  const navigate = useNavigate();
+
 
   const handleSignUp = async (e) => {
-    e.preventDefault(); // Prevent the default form submission
-    setError(""); // Reset error before new sign-up attempt
+    e.preventDefault();
+    setError("");
 
-    const { success, message } = await createUser(newUser);
-    if (!success) {
-      setError(message); // Set error message if creation fails
+    console.log("🚀 Attempting to create user in MongoDB...");
+
+    try {
+      const { success, message } = await createUser(newUser);
+      if (!success) {
+        throw new Error(message); 
+      }
+
+      console.log("✅ User created in MongoDB:", newUser);
+
       toast({
-        title: "Error",
-        description: message,
-        status: "error",
-        isClosable: true,
-      });
-    } else {
-      toast({
-        title: "Success",
-        description: message,
+        title: "Success!",
+        description: "Account created! Redirecting...",
         status: "success",
         isClosable: true,
       });
-      setNewUser({
-        username: "",
-        email: "",
-        password: "",
-      }); // Reset form if successful
+
+      setTimeout(() => {
+        navigate("/create-profile"); 
+      }, 500);
+    } catch (error) {
+      console.error("❌ Sign Up Error:", error);
+      setError(error.message);
+      toast({
+        title: "Sign Up Failed",
+        description: error.message,
+        status: "error",
+        isClosable: true,
+      });
     }
   };
 
   const handleGoogleSignUp = async () => {
     try {
-      // Use the modular API's signInWithPopup
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
-      // Handle user data (store, show, etc.)
+
+      console.log("✅ Google User Created:", user.email);
+
       toast({
-        title: "Success",
-        description: "Successfully signed up with Google",
+        title: "Google Sign-Up Success!",
+        description: "Redirecting to profile setup...",
         status: "success",
         isClosable: true,
       });
+
+      setTimeout(() => {
+        navigate("/create-profile");
+      }, 500);
     } catch (error) {
-      console.error("Error during Google sign-in:", error);
+      console.error("Google Sign Up Error:", error);
       toast({
         title: "Error",
         description: error.message,
@@ -179,16 +195,7 @@ const SignUpPage = () => {
             {error && <Text color="red.500">{error}</Text>} {/* Display error */}
 
             {/* Sign-Up Button */}
-            <Button
-              type="submit"
-              width="full"
-              bg="green.400"
-              color="black"
-              borderRadius="md"
-              fontSize="lg"
-              fontWeight="bold"
-              _hover={{ bg: "green.500" }}
-            >
+            <Button type="submit" width="full" bg="green.400" color="black" borderRadius="md" fontSize="lg" fontWeight="bold" _hover={{ bg: "green.500" }}>
               Sign Up
             </Button>
           </VStack>

@@ -5,6 +5,7 @@ import SignUpPage from './pages/SignUp';
 import LoginPage from './pages/LogIn';
 import WelcomePage from './pages/Welcome';
 import ForgotPassword from './pages/ForgotPassword';
+import CreateProfile from './pages/CreateProfile';
 
 console.log("App component is rendering...");
 
@@ -18,6 +19,7 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/" element={<WelcomePage />} />
                 <Route path="/ForgotPassword" element={<ForgotPassword />} />
+                <Route path="/create-profile" element={<CreateProfile />} />
             </Routes>
         </Box>
     );
