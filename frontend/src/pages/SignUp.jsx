@@ -88,24 +88,22 @@ const SignUpPage = () => {
 
       <Heading size="2xl" fontWeight="bold" mb={112}></Heading>
 
-
       {/* Toggle Button */}
-      <Box display="flex" justifyContent="center" mb={4}>
+      <Box display="flex" justifyContent="center" mb={4} >
         <Button
           onClick={() => setIsGoogleSignUp(false)}
-          colorScheme={isGoogleSignUp ? "black" : "green"}
+          colorScheme={isGoogleSignUp ? "gray" : "green"}
         >
-          Regular Sign Up
+          Password Sign Up
         </Button>
         <Button
           onClick={() => setIsGoogleSignUp(true)}
-          colorScheme={isGoogleSignUp ? "green" : "black"}
+          colorScheme={isGoogleSignUp ? "green" : "gray"}
           ml={4}
         >
-          Sign Up with Google
+          Google Sign Up
         </Button>
       </Box>
-
 
 
       {/* Sign Up Form */}
