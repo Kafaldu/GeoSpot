@@ -18,54 +18,12 @@ const CreateProfilePage = () => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-
-    // Get the logged-in user
-    const user = auth.currentUser;
-    if (!user) {
-      setError("No user found. Please log in again.");
-      return;
-    }
-
-    // Validate fields
-    if (!profile.firstName || !profile.lastName || !profile.birthday) {
-      setError("Please fill in all fields.");
-      return;
-    }
-
-    // Set default user stats
-    const userData = {
-      uid: user.uid,
-      firstName: profile.firstName,
-      lastName: profile.lastName,
-      birthday: profile.birthday,
-      userLevel: 1, // Default level
-      joinDate: Timestamp.now(), // Auto-set current date
-      streakDays: 0, // Starts at 0
-      spotsVisited: 0, // No spots yet
-    };
-
-    try {
-      // Save user data in Firestore
-      await setDoc(doc(db, "users", user.uid), userData);
-
-      toast({
-        title: "Profile Created!",
-        description: "Your account has been set up.",
-        status: "success",
-        isClosable: true,
-      });
-
-      // Redirect to the pet selection page
-      navigate("/choose-pet");
-    } catch (error) {
-      console.error("Error saving profile:", error);
-      setError("Failed to create profile. Please try again.");
-    }
+  const handleSubmit = (e) => {
+    e.preventDefault(); 
+    console.log(" Navigating to /choose-pet...");
+    navigate("/choose-pet"); 
   };
-
+  
   return (
     <Box
       minH="100vh"
