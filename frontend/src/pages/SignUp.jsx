@@ -62,7 +62,22 @@ const SignUpPage = () => {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
+      // Use displayName or fallback to email if displayName is not available
+      const username = user.displayName || user.email.split('@')[0]; // Using email prefix if displayName is empty
       console.log("✅ Google User Created:", user.email);
+
+      // You can store the user data and navigate to a profile setup page
+      const newUserData = {
+        username: username,
+        email: user.email,
+        password: "", // No password needed for Google sign-up
+      };
+
+      // Create user in the store or backend if necessary
+      const { success, message } = await createUser(newUserData);
+      if (!success) {
+        throw new Error(message);
+      }
 
       toast({
         title: "Google Sign-Up Success!",
@@ -72,7 +87,7 @@ const SignUpPage = () => {
       });
 
       setTimeout(() => {
-        navigate("/create-profile");
+        navigate("/create-profile"); // Redirect to profile setup page
       }, 500);
     } catch (error) {
       console.error("Google Sign Up Error:", error);
@@ -102,7 +117,7 @@ const SignUpPage = () => {
       {/* Icon */}
       <FaUserPlus size={50} color="green.300" mt={3} mb={8} /> {/* Adjusted mb for space below icon */}
 
-      <Heading size="2xl" fontWeight="bold" mb={112}></Heading>
+      <Heading size="2xl" fontWeight="bold" mb={10}></Heading>
 
       {/* Toggle Button */}
       <Box display="flex" justifyContent="center" mb={4} >
@@ -149,7 +164,7 @@ const SignUpPage = () => {
             fontWeight="bold"
             _hover={{ bg: "green.500" }}
           >
-            Sign Up
+            Sign Up with Google
           </Button>
         ) : (
           // Regular Sign-Up Form

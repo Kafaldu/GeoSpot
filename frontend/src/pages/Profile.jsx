@@ -1,7 +1,24 @@
-import React from "react";
-import { Box, VStack, Heading, Text, Image, Grid, GridItem, SimpleGrid } from "@chakra-ui/react";
+import React, { useEffect, useState } from "react";
+import { Box, Heading, Text, Image, SimpleGrid } from "@chakra-ui/react";
+import { useUserStore } from "../creator/user";
+import { getAuth } from "firebase/auth"; // Ensure you're importing the Firebase Auth for UID
 
 const UserProfilePage = () => {
+  const { users, getUser } = useUserStore();
+  const [isLoading, setIsLoading] = useState(true);
+
+  const auth = getAuth();
+  const currentUser = users[0];  // Assuming the first user is the current user
+  const uid = auth.currentUser ? auth.currentUser.uid : null; // Get UID from Firebase Authentication
+
+  useEffect(() => {
+    if (uid && !currentUser) {
+      getUser(uid).then(() => setIsLoading(false)); // Fetch user if UID is available and user is not loaded
+    } else {
+      setIsLoading(false); // No need to fetch if user already exists
+    }
+  }, [currentUser, getUser, uid]);
+
   return (
     <Box
       minH="100vh"
@@ -15,15 +32,17 @@ const UserProfilePage = () => {
     >
       {/* Profile Picture */}
       <Image
-        src="/images/profile-placeholder.png" // Placeholder image
+        src={currentUser?.photoURL || "/images/default-avatar.png"} // Use Google photoURL or fallback to default image
         alt="Profile Picture"
         borderRadius="full"
         boxSize="120px"
         mb={4}
       />
 
-      {/* Username */}
-      <Heading size="lg">Username</Heading>
+      {/* Email */}
+      <Heading size="lg">
+        {isLoading ? "Loading..." : currentUser ? currentUser.email : "No User Found"}
+      </Heading>
 
       {/* User Stats Grid (2 Columns) */}
       <SimpleGrid columns={2} spacing={4} mt={3}>
@@ -51,17 +70,11 @@ const UserProfilePage = () => {
       {/*3-Wide Grid of Pictures */}
       <Box mt={6} w="100%" maxW="500px">
         <Heading size="md" mb={2}>Your Photos</Heading>
-        <Grid templateColumns="repeat(3, 1fr)" gap={3}>
-          <GridItem w="100%">
-            <Image src="/images/photo-placeholder.png" alt="Photo" borderRadius="md" />
-          </GridItem>
-          <GridItem w="100%">
-            <Image src="/images/photo-placeholder.png" alt="Photo" borderRadius="md" />
-          </GridItem>
-          <GridItem w="100%">
-            <Image src="/images/photo-placeholder.png" alt="Photo" borderRadius="md" />
-          </GridItem>
-        </Grid>
+        <SimpleGrid columns={3} spacing={3}>
+          <Image src="/images/photo-placeholder.png" alt="Photo" borderRadius="md" />
+          <Image src="/images/photo-placeholder.png" alt="Photo" borderRadius="md" />
+          <Image src="/images/photo-placeholder.png" alt="Photo" borderRadius="md" />
+        </SimpleGrid>
       </Box>
     </Box>
   );

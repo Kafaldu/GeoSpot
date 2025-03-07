@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { getAuth } from "firebase/auth"; // Firebase authentication import
 
 export const useUserStore = create((set) => ({
   users: [],
@@ -25,10 +26,32 @@ export const useUserStore = create((set) => ({
     return { success: true, message: "User created successfully" };
   },
 
-  fetchUsers: async () => {
-    const res = await fetch("/api/users");
-    const data = await res.json();
-    set({ users: data.data });
+  getUser: async (uid) => {
+    try {
+      const auth = getAuth(); // Get Firebase auth instance
+      const user = auth.currentUser; // Get the current authenticated user
+
+      // Check if user is logged in
+      if (!user || user.uid !== uid) {
+        return { success: false, message: "User not found" };
+      }
+
+      // Pull user info from Firebase
+      const userData = {
+        uid: user.uid,
+        email: user.email, // Pull email from Firebase
+        username: user.displayName || "No Username", // You can modify as needed
+      };
+
+      set((state) => ({
+        users: [userData], // Set the user data in state
+      }));
+
+      return { success: true, message: "User retrieved successfully" };
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      return { success: false, message: error.message };
+    }
   },
 
   deleteUser: async (uid) => {
