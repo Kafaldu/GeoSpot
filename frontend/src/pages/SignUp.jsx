@@ -4,8 +4,6 @@ import { useToast } from "@chakra-ui/react";
 import { Link } from "react-router-dom";
 import { FaUserPlus } from "react-icons/fa";
 import { useUserStore } from "../creator/user"; 
-import { auth, googleProvider } from "../firebaseConfig"; 
-import { signInWithPopup } from "firebase/auth"; 
 import { useNavigate } from "react-router-dom";
 
 const SignUpPage = () => {
@@ -15,17 +13,15 @@ const SignUpPage = () => {
     password: "",
   });
   const [error, setError] = useState(""); 
-  const [isGoogleSignUp, setIsGoogleSignUp] = useState(false); 
   const { createUser } = useUserStore(); 
   const toast = useToast();
   const navigate = useNavigate();
-
 
   const handleSignUp = async (e) => {
     e.preventDefault();
     setError("");
 
-    console.log("🚀 Attempting to create user in MongoDB...");
+    console.log("Attempting to create user in MongoDB...");
 
     try {
       const { success, message } = await createUser(newUser);
@@ -33,7 +29,7 @@ const SignUpPage = () => {
         throw new Error(message); 
       }
 
-      console.log("✅ User created in MongoDB:", newUser);
+      console.log("User created in MongoDB:", newUser);
 
       toast({
         title: "Success!",
@@ -46,38 +42,10 @@ const SignUpPage = () => {
         navigate("/create-profile"); 
       }, 500);
     } catch (error) {
-      console.error("❌ Sign Up Error:", error);
+      console.error("Sign Up Error:", error);
       setError(error.message);
       toast({
         title: "Sign Up Failed",
-        description: error.message,
-        status: "error",
-        isClosable: true,
-      });
-    }
-  };
-
-  const handleGoogleSignUp = async () => {
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
-
-      console.log("✅ Google User Created:", user.email);
-
-      toast({
-        title: "Google Sign-Up Success!",
-        description: "Redirecting to profile setup...",
-        status: "success",
-        isClosable: true,
-      });
-
-      setTimeout(() => {
-        navigate("/create-profile");
-      }, 500);
-    } catch (error) {
-      console.error("Google Sign Up Error:", error);
-      toast({
-        title: "Error",
         description: error.message,
         status: "error",
         isClosable: true,
@@ -100,27 +68,7 @@ const SignUpPage = () => {
       <Heading size="2xl" fontWeight="bold" mb={10}>Create an Account</Heading>
 
       {/* Icon */}
-      <FaUserPlus size={50} color="green.300" mt={3} mb={8} /> {/* Adjusted mb for space below icon */}
-
-      <Heading size="2xl" fontWeight="bold" mb={112}></Heading>
-
-      {/* Toggle Button */}
-      <Box display="flex" justifyContent="center" mb={4} >
-        <Button
-          onClick={() => setIsGoogleSignUp(false)}
-          colorScheme={isGoogleSignUp ? "gray" : "green"}
-        >
-          Password Sign Up
-        </Button>
-        <Button
-          onClick={() => setIsGoogleSignUp(true)}
-          colorScheme={isGoogleSignUp ? "green" : "gray"}
-          ml={4}
-        >
-          Google Sign Up
-        </Button>
-      </Box>
-
+      <FaUserPlus size={50} color="green.300" mt={3} mb={8} />
 
       {/* Sign Up Form */}
       <Box
@@ -137,70 +85,54 @@ const SignUpPage = () => {
         borderRadius="md"
         shadow="md"
       >
-        {isGoogleSignUp ? (
-          // Google Sign-Up Form (Button only)
-          <Button
-            onClick={handleGoogleSignUp}
-            width="full"
+        {/* Regular Sign-Up Form */}
+        <VStack spacing={4} width="100%">
+          {/* Username Input */}
+          <Input
+            name="username"
+            value={newUser.username}
+            onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+            placeholder="Username"
             bg="green.400"
             color="black"
             borderRadius="md"
-            fontSize="lg"
-            fontWeight="bold"
-            _hover={{ bg: "green.500" }}
-          >
+            _placeholder={{ color: "black" }}
+          />
+
+          {/* Email Input */}
+          <Input
+            name="email"
+            value={newUser.email}
+            onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+            placeholder="Email"
+            bg="green.400"
+            color="black"
+            borderRadius="md"
+            _placeholder={{ color: "black" }}
+          />
+
+          {/* Password Input */}
+          <Input
+            name="password"
+            type="password"
+            value={newUser.password}
+            onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+            placeholder="Password"
+            bg="green.400"
+            color="black"
+            borderRadius="md"
+            _placeholder={{ color: "black" }}
+          />
+
+          {/* Error Message */}
+          {error && <Text color="red.500">{error}</Text>} {/* Display error */}
+
+          {/* Sign-Up Button */}
+          <Button type="submit" width="full" bg="green.400" color="black" borderRadius="md" fontSize="lg" fontWeight="bold" _hover={{ bg: "green.500" }}>
             Sign Up
           </Button>
-        ) : (
-          // Regular Sign-Up Form
-          <VStack spacing={4} width="100%">
-            {/* Username Input */}
-            <Input
-              name="username"
-              value={newUser.username}
-              onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
-              placeholder="Username"
-              bg="green.400"
-              color="black"
-              borderRadius="md"
-              _placeholder={{ color: "black" }}
-            />
+        </VStack>
 
-            {/* Email Input */}
-            <Input
-              name="email"
-              value={newUser.email}
-              onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-              placeholder="Email"
-              bg="green.400"
-              color="black"
-              borderRadius="md"
-              _placeholder={{ color: "black" }}
-            />
-
-            {/* Password Input */}
-            <Input
-              name="password"
-              type="password"
-              value={newUser.password}
-              onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-              placeholder="Password"
-              bg="green.400"
-              color="black"
-              borderRadius="md"
-              _placeholder={{ color: "black" }}
-            />
-
-            {/* Error Message */}
-            {error && <Text color="red.500">{error}</Text>} {/* Display error */}
-
-            {/* Sign-Up Button */}
-            <Button type="submit" width="full" bg="green.400" color="black" borderRadius="md" fontSize="lg" fontWeight="bold" _hover={{ bg: "green.500" }}>
-              Sign Up
-            </Button>
-          </VStack>
-        )}
-        <Heading  fontWeight="bold" mb={4}></Heading>
         {/* Link to Login page */}
         <Link to="/login">
           <Text

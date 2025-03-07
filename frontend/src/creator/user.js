@@ -25,11 +25,19 @@ export const useUserStore = create((set) => ({
     return { success: true, message: "User created successfully" };
   },
 
-  fetchUsers: async () => {
-    const res = await fetch("/api/users");
-    const data = await res.json();
-    set({ users: data.data });
-  },
+    getUser: async (uid) => {
+      const res = await fetch(`/api/users/${uid}`, {
+        method: "GET",
+      });
+      const data = await res.json();
+      if (!data.success) {
+        return { success: false, message: data.message };
+      }
+      set((state) => ({
+        users: state.users.filter((user) => user._id !== uid),
+      }));
+      return { success: true, message: data.message };
+    },
 
   deleteUser: async (uid) => {
     const res = await fetch(`/api/users/${uid}`, {

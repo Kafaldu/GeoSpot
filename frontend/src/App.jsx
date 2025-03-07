@@ -9,23 +9,40 @@ import CreateProfile from './pages/CreateProfile';
 import ChoosePet from './pages/ChoosePet';
 import ProfileCreationCompletePage from './pages/ProfileComplete';
 import UserProfilePage from './pages/Profile';
+import PrivateRoute from './components/PrivateRoute';
+import {useState} from "react";
 
 console.log("App component is rendering...");
 
 function App() {
     const { colorMode } = useColorMode();
+    const [isAuthenticated, setIsAuthenticated] = useState(false); // Maintain authentication state
 
     return (
         <Box minH="100vh" bg={colorMode === "light" ? "gray.200" : "gray.800"}>
             <Routes>
                 <Route path="/signup" element={<SignUpPage />} />
-                <Route path="/login" element={<LoginPage />} />
+                <Route path="/login" element={<LoginPage setIsAuthenticated={setIsAuthenticated} />} />
                 <Route path="/" element={<WelcomePage />} />
                 <Route path="/ForgotPassword" element={<ForgotPassword />} />
-                <Route path="/create-profile" element={<CreateProfile />} />
-                <Route path="/choose-pet" element={<ChoosePet />} />
-                <Route path="/Profile-complete" element={<ProfileCreationCompletePage />} />
-                <Route path="/User-Profile" element={<UserProfilePage />} />
+                
+                {/* Private routes */}
+                <Route
+                    path="/create-profile"
+                    element={<PrivateRoute isAuthenticated={isAuthenticated} element={<CreateProfile />} />}
+                />
+                <Route
+                    path="/choose-pet"
+                    element={<PrivateRoute isAuthenticated={isAuthenticated} element={<ChoosePet />} />}
+                />
+                <Route
+                    path="/Profile-complete"
+                    element={<PrivateRoute isAuthenticated={isAuthenticated} element={<ProfileCreationCompletePage />} />}
+                />
+                <Route
+                    path="/User-Profile"
+                    element={<PrivateRoute isAuthenticated={isAuthenticated} element={<UserProfilePage />} />}
+                />
             </Routes>
         </Box>
     );
