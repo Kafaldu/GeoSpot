@@ -21,6 +21,13 @@ export const createUser = async (req, res) => {
             username,
             email,
             password,
+            firstname: "N/A",
+            lastname: "N/A",
+            birthday: new Date(),
+            level: 1,
+            spotsVisited: 0,
+            streak: 0,
+            memberSince: new Date(),
         });
 
         await newUser.save();

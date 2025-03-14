@@ -21,6 +21,30 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true
+    },
+    firstname: {
+      type: String,
+      required: true
+    },
+    lastname: {
+      type: String,
+      required: true
+    },
+    birthday: {
+      type: Date,
+      required: true
+    },
+    level: {
+      type: Number,
+      default: 1
+    },
+    spotsVisited: {
+      type: Number,
+      default: 0
+    },
+    streak: {
+      type: Number,
+      default: 0
     }
   },
   {
