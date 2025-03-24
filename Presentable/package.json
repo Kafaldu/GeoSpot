@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "start": "npm install && npm run build --prefix frontend && cross-env NODE_ENV=production node backend/server.js"
+  },
+  "dependencies": {
+    "cross-env": "^7.0.3",
+    "framer-motion": "^12.5.0",
+    "react-icons": "^5.5.0"
+  }
+}
