@@ -4,6 +4,7 @@ import path from "path";
 import cors from "cors";
 import { connectDB } from "./config/db.js";
 import userRoutes from "./routes/user.route.js";
+
 import authRoutes from "./routes/authRoutes.js";
 
 dotenv.config({ path: path.resolve("backend", ".env") }); // Ensure path is correct
