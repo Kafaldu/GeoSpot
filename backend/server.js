@@ -1,0 +1,78 @@
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import UserModel from './models/user.model.js';
+import dotenv from 'dotenv';
+dotenv.config();
+import { v4 as uuidv4 } from 'uuid';
+
+const app = express();
+
+app.use(express.json());
+app.use(cors({
+  origin: '*', // <- allow ALL origins
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
+
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('MongoDB connected'))
+  .catch((err) => console.error('MongoDB connection error:', err));
+
+  app.post('/signup', async (req, res) => {
+    try {
+      const { username, email, password } = req.body;
+      const existingUser = await UserModel.findOne({ email });
+  
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already registered" });
+      }
+  
+      const newUser = await UserModel.create({ 
+        username, 
+        email, 
+        password, 
+        uid: uuidv4() // <--- ADD this: generate a random UID here
+      });
+  
+      res.json(newUser);
+    } catch (err) {
+      console.error("Error during signup:", err);
+      res.status(500).json({ message: "Server error", error: err });
+    }
+  });
+  
+
+app.post('/login', (req, res) => {
+  const { email, password } = req.body;
+  UserModel.findOne({ email: email })
+    .then(user => {
+      if (user) {
+        if (user.password === password) {
+          res.json("Success");
+        } else {
+          res.json("Password incorrect");
+        }
+      } else {
+        res.json("No record found");
+      }
+    });
+});
+
+app.post('/home', (req, res) => {
+  const { email } = req.body;
+  UserModel.findOne({ email: email })
+    .then(user => {
+      if (user) {
+        res.json({ username: user.username });
+      } else {
+        res.json("No user found with that email");
+      }
+    })
+    .catch(err => res.json(err));
+});
+
+app.listen(3000, () => {
+  console.log("Server is running on port 3000");
+  console.log("Check out http://localhost:5173/signup");
+});
