@@ -33,3 +33,8 @@ Important Notes:
 
 - If port 3000 is in use, stop previous processes.
 - If testing on a real device instead of localhost, use ngrok or your local IP address.
+
+- NOTE: To view as mobile app:
+- right click on screen, click inspect
+- navigate to little phone icon and click on it
+- select type of phone display you would like to visualize
