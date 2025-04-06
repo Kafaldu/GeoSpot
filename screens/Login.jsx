@@ -13,10 +13,10 @@ const Login = () => {
   const handleSubmit = () => {
     setError("");
 
-    axios.post('http://localhost:3000/login', { email, password })  // <-- Change X.X to your real IP address!
+    axios.post('http://localhost:3000/login', { email, password })  
       .then(result => {
         if (result.data === "Success") {
-          navigation.navigate('Home', { email });
+          navigation.navigate("UserProfilePage");
         } else {
           setError(result.data.message || "Invalid credentials. Please try again.");
         }
@@ -60,6 +60,14 @@ const Login = () => {
                 Don't have an account? Sign up
             </Text>
         </TouchableOpacity>
+
+        {/* Forgot Password Link */}
+        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+          <Text style={styles.link}>
+            Forgot your password?
+          </Text>
+        </TouchableOpacity>
+
       </View>
     </View>
   );

@@ -12,17 +12,17 @@ const SignUp = () => {
   const [error, setError] = useState("");
 
   const handleSubmit = () => {
-    setError(""); // Clear previous errors
+    setError(""); 
   
     axios.post('http://localhost:3000/signup', { username, email, password })
       .then(result => {
         console.log(result);
-        navigation.navigate('Login'); // Go to login if signup succeeds
+        navigation.navigate('CreateProfile'); 
       })
       .catch(err => {
         console.error(err);
         if (err.response && err.response.data && err.response.data.message) {
-          setError(err.response.data.message); // Show server error message
+          setError(err.response.data.message); 
         } else {
           setError("An error occurred. Please try again.");
         }

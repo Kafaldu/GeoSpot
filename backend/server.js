@@ -10,7 +10,7 @@ const app = express();
 
 app.use(express.json());
 app.use(cors({
-  origin: '*', // <- allow ALL origins
+  origin: '*', 
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
@@ -32,7 +32,7 @@ mongoose.connect(process.env.MONGO_URI)
         username, 
         email, 
         password, 
-        uid: uuidv4() // <--- ADD this: generate a random UID here
+        uid: uuidv4() 
       });
   
       res.json(newUser);
@@ -70,6 +70,19 @@ app.post('/home', (req, res) => {
       }
     })
     .catch(err => res.json(err));
+});
+
+app.get('/user/:email', (req, res) => {
+  const { email } = req.params;
+  UserModel.findOne({ email: email })
+    .then(user => {
+      if (user) {
+        res.json(user); 
+      } else {
+        res.status(404).json({ message: "User not found" });
+      }
+    })
+    .catch(err => res.status(500).json({ message: "Server error", error: err }));
 });
 
 app.listen(3000, () => {
