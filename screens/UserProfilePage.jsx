@@ -1,19 +1,43 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
-
+import { useRoute } from "@react-navigation/native";
+import axios from "axios";
 // Placeholder content for user profile
 const UserProfilePage = () => {
-  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const route = useRoute();
+  const email = route.params?.email;
+
 
   // Simulate loading state
   useEffect(() => {
-    setLoading(false); 
-  }, []);
-
+    if (email) {
+      axios.post("http://localhost:3000/UserProfilePage", { email })
+        .then((result) => {
+          setUser(result.data);
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.error(err);
+          setError("Failed to load user data.");
+          setLoading(false);
+        });
+    } else {
+      setError("No email provided.");
+      setLoading(false);
+    }
+  }, [email]);
+  
   if (loading) {
     return <Text>Loading...</Text>;
   }
-
+  console.log(user);
+  if (error) {
+    return <Text>{error}</Text>;
+  }
   return (
     <ScrollView style={styles.container}>
       {/* Profile Section */}
@@ -25,7 +49,7 @@ const UserProfilePage = () => {
         />
         {/* Username and Bio */}
         <View style={styles.profileInfo}>
-          <Text style={styles.username}>John Doe</Text>
+          <Text style={styles.username}>{user.username}</Text>
           <Text style={styles.bio}>Add a cool bio here!</Text>
         </View>
       </View>
@@ -43,15 +67,15 @@ const UserProfilePage = () => {
       {/* Stats Section: Posts, Followers, Following */}
       <View style={styles.statsContainer}>
         <View style={styles.statsItem}>
-          <Text style={styles.statsNumber}>10</Text>
+          <Text style={styles.statsNumber}>{user.numPosts}</Text>
           <Text style={styles.statsLabel}>Posts</Text>
         </View>
         <View style={styles.statsItem}>
-          <Text style={styles.statsNumber}>200</Text>
+          <Text style={styles.statsNumber}>{user.numFollowers}</Text>
           <Text style={styles.statsLabel}>Followers</Text>
         </View>
         <View style={styles.statsItem}>
-          <Text style={styles.statsNumber}>180</Text>
+          <Text style={styles.statsNumber}>{user.numFollowing}</Text>
           <Text style={styles.statsLabel}>Following</Text>
         </View>
       </View>
@@ -62,36 +86,40 @@ const UserProfilePage = () => {
         <View style={styles.userStatsContainer}>
           <View style={styles.userStatColumn}>
             <View style={styles.userStatItem}>
-              <Text style={styles.userStatLabel}>User Level:</Text>
-              <Text style={styles.userStatValue}>N/A</Text>
+              <Text style={styles.userStatLabel}>User Level:      </Text>
+              <Text style={styles.userStatValue}>{user.userLevel}</Text>
             </View>
             <View style={styles.userStatItem}>
-              <Text style={styles.userStatLabel}>Spots Visited:</Text>
-              <Text style={styles.userStatValue}>0</Text>
+              <Text style={styles.userStatLabel}>Spots Visited:     </Text>
+              <Text style={styles.userStatValue}>{user.spotsVisited}</Text>
             </View>
           </View>
           <View style={styles.userStatColumn}>
             <View style={styles.userStatItem}>
-              <Text style={styles.userStatLabel}>Streak:</Text>
-              <Text style={styles.userStatValue}>0 Days</Text>
+              <Text style={styles.userStatLabel}>Streak:      </Text>
+              <Text style={styles.userStatValue}>{user.streak}</Text>
             </View>
             <View style={styles.userStatItem}>
-              <Text style={styles.userStatLabel}>Member Since:</Text>
-              <Text style={styles.userStatValue}>N/A</Text>
-            </View>
+              <Text style={styles.userStatLabel}>Member Since:      </Text>
+              <Text style={styles.userStatValue}>{user.memberSince ? new Date(user.memberSince).toLocaleDateString('en-US') : 'Not available'}</Text>
+              </View>
           </View>
         </View>
       </View>
       
       {/* Pet Section */}
-      <Text style={styles.petTitle}>Your Pet</Text>
+      <View style={styles.titleContainer}>
+        <Text style={styles.petTitle}>Your Pet</Text>
+      </View>
       <Image
         source={{ uri: "https://via.placeholder.com/100" }}
         style={styles.petImage}
       />
 
       {/* Photos Section */}
-      <Text style={styles.photosTitle}>Photos</Text>
+      <View style={styles.titleContainer}>
+        <Text style={styles.photosTitle}>Photos</Text>
+      </View>
       <View style={styles.photosContainer}>
         {/* Placeholders for photos */}
         {[...Array(6)].map((_, index) => (
@@ -179,6 +207,7 @@ const styles = StyleSheet.create({
   statsLabel: {
     fontSize: 14,
     color: "#ccc",
+    marginRight: 3,
   },
   userStats: {
     marginBottom: 20,
@@ -195,17 +224,23 @@ const styles = StyleSheet.create({
     color: "#68d391",
     marginBottom: 10,
   },
-  petImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-    marginBottom: 20,
-  },
   photosTitle: {
     fontSize: 18,
     fontWeight: "bold",
     color: "#68d391",
     marginBottom: 10,
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+  },
+  petImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+    marginBottom: 20,
   },
   photosContainer: {
     flexDirection: "row",
@@ -244,18 +279,20 @@ const styles = StyleSheet.create({
     marginRight: 10,  
   },
   userStatItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",  
+    flexDirection: "row", 
     marginBottom: 12,  
   },
   userStatLabel: {
     fontSize: 16,
-    color: "#ccc",  
+    color: "#ccc",
+    flexShrink: 1,  
   },
   userStatValue: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#68d391",  
+    color: "#68d391",
+    flexShrink: 1,  
+    justifyContent: "center"
   },
 });
 

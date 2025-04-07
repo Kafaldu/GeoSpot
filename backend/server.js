@@ -59,12 +59,22 @@ app.post('/login', (req, res) => {
     });
 });
 
-app.post('/home', (req, res) => {
+app.post('/UserProfilePage', (req, res) => {
   const { email } = req.body;
   UserModel.findOne({ email: email })
     .then(user => {
       if (user) {
-        res.json({ username: user.username });
+        res.json({ 
+          username: user.username, 
+          numPosts: user.numPosts,
+          numFollowers: user.numFollowers,
+          numFollowing: user.numFollowing,
+          userLevel: user.userLevel,
+          spotsVisited: user.spotsVisited,
+          streak: user.streak,
+          memberSince: user.memberSince,
+        });
+        
       } else {
         res.json("No user found with that email");
       }
@@ -87,5 +97,4 @@ app.get('/user/:email', (req, res) => {
 
 app.listen(3000, () => {
   console.log("Server is running on port 3000");
-  console.log("Check out http://localhost:5173/signup");
 });

@@ -16,7 +16,7 @@ const Login = () => {
     axios.post('http://localhost:3000/login', { email, password })  
       .then(result => {
         if (result.data === "Success") {
-          navigation.navigate("UserProfilePage");
+          navigation.navigate('HomeTabs', { screen: 'UserProfilePage', params: { email: 'kafaldu2005@gmail.com' } });
         } else {
           setError(result.data.message || "Invalid credentials. Please try again.");
         }
