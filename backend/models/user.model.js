@@ -11,7 +11,9 @@ const UserSchema = new mongoose.Schema({
     numFollowers: { type: Number, default: 0 },
     numFollowing: { type: Number, default: 0 },
     spotsVisited: { type: Number, default: 0 },
-    streak: { type: Number, default: 0 },  
+    streak: { type: Number, default: 0 },
+    followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'users'}],
+    following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'users'}],
 });
 
 const UserModel = mongoose.model("users", UserSchema);

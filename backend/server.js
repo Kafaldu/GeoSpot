@@ -95,6 +95,38 @@ app.get('/user/:email', (req, res) => {
     .catch(err => res.status(500).json({ message: "Server error", error: err }));
 });
 
+app.post('/follow', (req, res) => {
+  const { currentUserId, targetUserId } = req.body;
+  UserModel.findByIdAndUpdate(currentUserId, {
+    $addToSet: { following: targetUserId }
+  });
+  UserModel.findByIdAndUpdate(targetUserId, {
+    $addToSet: { followers: currentUserId }
+  });
+  res.json({ message: "Followed successfully" });
+});
+
+app.post('/unfollow', (req, res) => {
+  const { currentUserId, targetUserId } = req.body;
+  UserModel.findByIdAndUpdate(currentUserId, {
+    $pull: { following: targetUserId }
+  });
+  UserModel.findByIdAndUpdate(targetUserId, {
+    $pull: { followers: currentUserId }
+  });
+  res.json({ message: "Unfollowed successfully" });
+});
+
+app.get('/followers/:userId', (req, res) => {
+  const user = UserModel.findById(req.params.userId).populate('followers', 'username email');
+  res.json(user.followers);
+});
+
+app.get('/following/:userId', (req, res) => {
+  const user = UserModel.findById(req.params.userId).populate('following', 'username email');
+  res.json(user.following);
+});
+
 app.listen(3000, () => {
   console.log("Server is running on port 3000");
 });
