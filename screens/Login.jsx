@@ -12,11 +12,13 @@ const Login = () => {
 
   const handleSubmit = () => {
     setError("");
-
+  
     axios.post('http://localhost:3000/login', { email, password })  
       .then(result => {
-        if (result.data === "Success") {
-          navigation.navigate('HomeTabs', { screen: 'UserProfilePage', params: { email: 'kafaldu2005@gmail.com' } });
+        if (result.data.message === "Success") {
+          
+          const loggedInEmail = result.data.user.email;
+          navigation.navigate('HomeTabs', { screen: 'UserProfilePage', params: { email: loggedInEmail } });
         } else {
           setError(result.data.message || "Invalid credentials. Please try again.");
         }
@@ -26,6 +28,7 @@ const Login = () => {
         setError("An error occurred. Please try again later.");
       });
   };
+  
 
   return (
     <View style={styles.container}>

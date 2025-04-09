@@ -13,7 +13,7 @@ const ProfileCreationCompletePage = () => {
       <Text style={styles.subtitle}>You're all set! Click below to continue.</Text>
 
       <TouchableOpacity onPress={handleContinue} style={styles.button}>
-        <Text style={styles.buttonText}>Continue to Profile</Text>
+        <Text style={styles.buttonText}>Back to Login</Text>
       </TouchableOpacity>
     </View>
   );

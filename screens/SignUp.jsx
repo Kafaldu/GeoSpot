@@ -17,7 +17,7 @@ const SignUp = () => {
     axios.post('http://localhost:3000/signup', { username, email, password })
       .then(result => {
         console.log(result);
-        navigation.navigate('CreateProfile'); 
+        navigation.navigate('CreateProfile', { email: email }); 
       })
       .catch(err => {
         console.error(err);

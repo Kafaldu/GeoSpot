@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 
 const CreateProfilePage = () => {
+  const route = useRoute();            
+  const { email } = route.params;       
   const [profile, setProfile] = useState({
     firstName: "",
     lastName: "",
@@ -21,9 +23,9 @@ const CreateProfilePage = () => {
       return;
     }
 
-    // Handle form submission here 
+    // Handle form submission 
     console.log("Profile created:", profile);
-    navigation.navigate("ChoosePetPage"); 
+    navigation.navigate("ChoosePetPage", { email: email }); 
   };
 
   return (
