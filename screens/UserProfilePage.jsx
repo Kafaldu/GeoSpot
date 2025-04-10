@@ -19,21 +19,12 @@ const UserProfilePage = () => {
   const [usernameInput, setUsernameInput] = useState('');
   const [settingsModalVisible, setSettingsModalVisible] = useState(false);
   const [petModalVisible, setPetModalVisible] = useState(false);
+  const [photoUrls, setPhotoUrls] = useState([]);
 
 
 
   const route = useRoute();
   const email = route.params?.email;
-
-  // Placeholder content for user profile
-  const photoUrls = [
-    "https://picsum.photos/id/237/300/300", 
-    "https://picsum.photos/id/238/300/300", 
-    "https://picsum.photos/id/239/300/300", 
-    "https://picsum.photos/id/240/300/300", 
-    "https://picsum.photos/id/241/300/300", 
-    "https://picsum.photos/id/242/300/300",
-  ];
 
   
   
@@ -122,6 +113,40 @@ const UserProfilePage = () => {
           setBioInput(result.data.bio || '');
           setUsernameInput(result.data.username || '');
           setLoading(false);
+
+          const generatedPhotos = [
+            {
+              url: "https://picsum.photos/id/237/300/300",
+              postedBy: result.data.username,   // <-- grab username
+              date: new Date().toLocaleDateString('en-US')  // today's date
+            },
+            {
+              url: "https://picsum.photos/id/238/300/300",
+              postedBy: result.data.username,
+              date: new Date().toLocaleDateString('en-US')
+            },
+            {
+              url: "https://picsum.photos/id/239/300/300",
+              postedBy: result.data.username,
+              date: new Date().toLocaleDateString('en-US')
+            },
+            {
+              url: "https://picsum.photos/id/240/300/300",
+              postedBy: result.data.username,
+              date: new Date().toLocaleDateString('en-US')
+            },
+            {
+              url: "https://picsum.photos/id/241/300/300",
+              postedBy: result.data.username,
+              date: new Date().toLocaleDateString('en-US')
+            },
+            {
+              url: "https://picsum.photos/id/242/300/300",
+              postedBy: result.data.username,
+              date: new Date().toLocaleDateString('en-US')
+            },
+          ];
+          setPhotoUrls(generatedPhotos);
         })
         .catch((err) => {
           console.error(err);
@@ -252,20 +277,17 @@ const UserProfilePage = () => {
         <Text style={styles.photosTitle}>Photos</Text>
       </View>
       <View style={styles.photosContainer}>
-        {photoUrls.map((url, index) => (
-          <TouchableOpacity
-            key={index}
-            onPress={() => {
-              setSelectedPhoto(url);  
-              setModalVisible(true);  
-            }}
-          >
-            <Image
-              source={{ uri: url }}
-              style={styles.photo}
-            />
-          </TouchableOpacity>
-        ))}
+      {photoUrls.map((photo, index) => (
+        <TouchableOpacity
+          key={index}
+          onPress={() => {
+            setSelectedPhoto(photo);  // set the whole photo object
+            setModalVisible(true);  
+          }}
+        >
+          <Image source={{ uri: photo.url }} style={styles.photo} />
+        </TouchableOpacity>
+      ))}
       </View>
 
       {/*Open Image*/}
@@ -276,10 +298,27 @@ const UserProfilePage = () => {
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalContainer}>
-          <TouchableOpacity style={styles.modalBackground} onPress={() => setModalVisible(false)}>
-            <Image source={{ uri: selectedPhoto }} style={styles.modalImage} />
+          <TouchableOpacity 
+            style={styles.modalBackground} 
+            activeOpacity={1} 
+            onPress={() => setModalVisible(false)}
+          >
+            <View style={styles.modalContent}>
+              {/* Top section: Username and date */}
+              {selectedPhoto && (
+                <View style={styles.postHeader}>
+                  <Text style={styles.postUsername}>{selectedPhoto.postedBy}</Text>
+                  <Text style={styles.postDate}>{selectedPhoto.date}</Text>
+                </View>
+              )}
+              {/* Image itself */}
+              {selectedPhoto && (
+                <Image source={{ uri: selectedPhoto.url }} style={styles.modalImage} />
+              )}
+            </View>
           </TouchableOpacity>
         </View>
+
       </Modal>
 
       {/* Edit Profile Modal */}
@@ -767,6 +806,35 @@ const styles = StyleSheet.create({
     width: "80%",
     height: "80%",
     resizeMode: "contain",
+  },
+  modalContent: {
+    backgroundColor: "#2d3748",
+    borderRadius: 10,
+    padding: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    width: 320,
+    minHeight: 400,
+  },
+  
+  postHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    paddingHorizontal: 20,
+    marginBottom: 10,
+  },
+  
+  postUsername: {
+    color: "#68d391",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  
+  postDate: {
+    color: "#ccc",
+    fontSize: 12,
   },
   
 });

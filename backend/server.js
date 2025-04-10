@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import UserModel from './models/user.model.js';
+import PostModel from './models/post.model.js';
 import dotenv from 'dotenv';
 dotenv.config();
 import { v4 as uuidv4 } from 'uuid';
@@ -155,6 +156,59 @@ app.post('/updatePetName', async (req, res) => {
   }
 });
 
+app.post('/createPost', async (req, res) => {
+  const { userId, username, imageUrl, description, location } = req.body;
+
+  try {
+    const newPost = await PostModel.create({
+      userId,
+      username,
+      imageUrl,
+      description,
+      location,
+    });
+
+    res.json(newPost);
+  } catch (err) {
+    console.error('Error creating post:', err);
+    res.status(500).json({ message: "Server error", error: err });
+  }
+});
+
+app.get('/friendsFeed/:userId', async (req, res) => {
+  try {
+    const user = await UserModel.findById(req.params.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const following = user.following || [];
+    const followers = user.followers || [];
+
+    // Find mutual followers
+    const mutuals = following.filter(id => followers.includes(id));
+
+    // Find posts by mutuals
+    const posts = await PostModel.find({ userId: { $in: mutuals } }).sort({ date: -1 });
+
+    res.json(posts);
+  } catch (err) {
+    console.error('Error fetching friends feed:', err);
+    res.status(500).json({ message: "Server error", error: err });
+  }
+});
+
+app.get('/localFeed/:location', async (req, res) => {
+  try {
+    const location = req.params.location;
+
+    const posts = await PostModel.find({ location }).sort({ date: -1 });
+
+    res.json(posts);
+  } catch (err) {
+    console.error('Error fetching local feed:', err);
+    res.status(500).json({ message: "Server error", error: err });
+  }
+});
+
 app.get('/user/:email', (req, res) => {
   const { email } = req.params;
   UserModel.findOne({ email: email })
@@ -168,27 +222,45 @@ app.get('/user/:email', (req, res) => {
     .catch(err => res.status(500).json({ message: "Server error", error: err }));
 });
 
-app.post('/follow', (req, res) => {
+app.post('/follow', async (req, res) => {
   const { currentUserId, targetUserId } = req.body;
-  UserModel.findByIdAndUpdate(currentUserId, {
-    $addToSet: { following: targetUserId }
-  });
-  UserModel.findByIdAndUpdate(targetUserId, {
-    $addToSet: { followers: currentUserId }
-  });
-  res.json({ message: "Followed successfully" });
+
+  try {
+    await UserModel.findByIdAndUpdate(currentUserId, {
+      $addToSet: { following: targetUserId }
+    });
+
+    await UserModel.findByIdAndUpdate(targetUserId, {
+      $addToSet: { followers: currentUserId }
+    });
+
+    res.json({ message: "Followed successfully" });
+  } catch (err) {
+    console.error('Error following user:', err);
+    res.status(500).json({ message: "Server error", error: err });
+  }
 });
 
-app.post('/unfollow', (req, res) => {
+
+app.post('/unfollow', async (req, res) => {
   const { currentUserId, targetUserId } = req.body;
-  UserModel.findByIdAndUpdate(currentUserId, {
-    $pull: { following: targetUserId }
-  });
-  UserModel.findByIdAndUpdate(targetUserId, {
-    $pull: { followers: currentUserId }
-  });
-  res.json({ message: "Unfollowed successfully" });
+
+  try {
+    await UserModel.findByIdAndUpdate(currentUserId, {
+      $pull: { following: targetUserId }
+    });
+
+    await UserModel.findByIdAndUpdate(targetUserId, {
+      $pull: { followers: currentUserId }
+    });
+
+    res.json({ message: "Unfollowed successfully" });
+  } catch (err) {
+    console.error('Error unfollowing user:', err);
+    res.status(500).json({ message: "Server error", error: err });
+  }
 });
+
 
 app.post('/updateProfilePicture', async (req, res) => {
   const { email, image } = req.body;
