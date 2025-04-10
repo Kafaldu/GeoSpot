@@ -16,7 +16,7 @@ const monsterImages = [
   "https://res.cloudinary.com/dbmpdoet6/image/upload/v1744230984/eetdplixjfmwc9x3rswt.png",
   "https://res.cloudinary.com/dbmpdoet6/image/upload/v1744230984/o0jznyskonwlv760motq.png",
   "https://res.cloudinary.com/dbmpdoet6/image/upload/v1744230984/gjtdrsiqb2ayh1fgypp7.png",
-  "https://res.cloudinary.com/dbmpdoet6/image/upload/v1744230984/mbz3e9xlteajf4c4amet.png)",
+  "https://res.cloudinary.com/dbmpdoet6/image/upload/v1744230984/mbz3e9xlteajf4c4amet.png",
   "https://res.cloudinary.com/dbmpdoet6/image/upload/v1744230984/bppokd0ezyxaszydnsij.png",
   "https://res.cloudinary.com/dbmpdoet6/image/upload/v1744230984/iaki2kcykalwspdupf3u.png",
   "https://res.cloudinary.com/dbmpdoet6/image/upload/v1744230984/gsljngkr400tywz3ailf.png",
