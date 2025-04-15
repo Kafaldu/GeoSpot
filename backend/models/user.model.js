@@ -18,10 +18,22 @@ const UserSchema = new mongoose.Schema({
     petLevel: { type: Number, default: 1 },              
     petName: { type: String, default: "No Name" },         
     petCurrency: { type: Number, default: 0 },
-    followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'users' }],
-    following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'users' }],
+    followers: [
+        {
+          uid: String,
+          username: String,
+          email: String,
+        }
+      ],
+      following: [
+        {
+          uid: String,
+          username: String,
+          email: String,
+        }
+      ],
 });
 
-const UserModel = mongoose.model("users", UserSchema);
+const UserModel = mongoose.model("User", UserSchema);
 
 export default UserModel;

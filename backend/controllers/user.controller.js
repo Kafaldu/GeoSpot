@@ -24,7 +24,9 @@ export const getUserProfile = async (req, res) => {
       pet: user.pet,
       petLevel: user.petLevel,
       petName: user.petName,
-      petCurrency: user.petCurrency
+      petCurrency: user.petCurrency,
+      uid: user.uid,
+      following: user.following
     });
 
   } catch (err) {

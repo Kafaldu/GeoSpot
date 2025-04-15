@@ -10,6 +10,7 @@ import cloudinary from './cloudinary.js';
 import feedRoutes from './routes/feed.routes.js';
 import userRoutes from './routes/user.routes.js';
 import { getUserProfile } from './controllers/user.controller.js';
+import jwt from 'jsonwebtoken';
 
 const app = express();
 
@@ -203,32 +204,81 @@ app.post('/follow', async (req, res) => {
   const { currentUserId, targetUserId } = req.body;
 
   try {
-    await UserModel.findByIdAndUpdate(currentUserId, {
-      $addToSet: { following: targetUserId }
-    });
+    const currentUser = await UserModel.findOne({ uid: currentUserId });
+    const targetUser = await UserModel.findOne({ uid: targetUserId });
 
-    await UserModel.findByIdAndUpdate(targetUserId, {
-      $addToSet: { followers: currentUserId }
-    });
+    if (!currentUser || !targetUser) {
+      return res.status(404).json({ message: "User(s) not found" });
+    }
+
+    // Build follow objects
+    const currentUserInfo = {
+      uid: currentUser.uid,
+      username: currentUser.username,
+      email: currentUser.email,
+    };
+
+    const targetUserInfo = {
+      uid: targetUser.uid,
+      username: targetUser.username,
+      email: targetUser.email,
+    };
+
+    // Add to following / followers
+    await UserModel.updateOne(
+      { uid: currentUserId },
+      { $addToSet: { following: targetUserInfo } }
+    );
+
+    await UserModel.updateOne(
+      { uid: targetUserId },
+      { $addToSet: { followers: currentUserInfo } }
+    );
+
+    // Update counts
+    const updatedCurrent = await UserModel.findOne({ uid: currentUserId });
+    const updatedTarget = await UserModel.findOne({ uid: targetUserId });
+
+    updatedCurrent.numFollowing = updatedCurrent.following.length;
+    updatedTarget.numFollowers = updatedTarget.followers.length;
+
+    await updatedCurrent.save();
+    await updatedTarget.save();
 
     res.json({ message: "Followed successfully" });
   } catch (err) {
-    console.error('Error following user:', err);
-    res.status(500).json({ message: "Server error", error: err });
+    console.error('Error in /follow:', err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 });
+
+
+
 
 
 app.post('/unfollow', async (req, res) => {
   const { currentUserId, targetUserId } = req.body;
 
   try {
-    await UserModel.findByIdAndUpdate(currentUserId, {
-      $pull: { following: targetUserId }
+    await UserModel.findOneAndUpdate(
+      { uid: currentUserId },
+      { $pull: { following: { uid: targetUserId } } }
+    );
+
+    await UserModel.findOneAndUpdate(
+      { uid: targetUserId },
+      { $pull: { followers: { uid: currentUserId } } }
+    );
+
+    const updatedCurrentUser = await UserModel.findOne({ uid: currentUserId });
+    const updatedTargetUser = await UserModel.findOne({ uid: targetUserId });
+
+    await UserModel.findOneAndUpdate({ uid: currentUserId }, {
+      numFollowing: updatedCurrentUser.following.length
     });
 
-    await UserModel.findByIdAndUpdate(targetUserId, {
-      $pull: { followers: currentUserId }
+    await UserModel.findOneAndUpdate({ uid: targetUserId }, {
+      numFollowers: updatedTargetUser.followers.length
     });
 
     res.json({ message: "Unfollowed successfully" });
@@ -237,6 +287,8 @@ app.post('/unfollow', async (req, res) => {
     res.status(500).json({ message: "Server error", error: err });
   }
 });
+
+
 
 
 app.post('/updateProfilePicture', async (req, res) => {
@@ -293,26 +345,86 @@ app.post('/updateProfile', async (req, res) => {
   }
 });
 
+app.post('/search', async (req, res) => {
+  const { username, currentUserId } = req.body;
+
+  try {
+    if (!username || !currentUserId) {
+      return res.status(400).json({ error: "Missing username or currentUserId" });
+    }
+
+    const results = await UserModel.find({
+      username: { $regex: username, $options: 'i' },
+      uid: { $ne: currentUserId }, 
+    });
+
+    const currentUser = await UserModel.findOne({ uid: currentUserId });
+    if (!currentUser) {
+      return res.status(404).json({ error: 'Current user not found' });
+    }
+
+    const followingSet = new Set((currentUser.following || []).map(f => f.uid || f));
+
+    const annotatedResults = results.map(user => ({
+      uid: user.uid,
+      username: user.username,
+      email: user.email,
+      isFollowing: followingSet.has(user.uid),
+    }));
+
+    res.json(annotatedResults);
+  } catch (error) {
+    console.error('Search error:', error);
+    res.status(500).json({ error: 'Search failed' });
+  }
+});
+
+
+
 
 
 app.get('/followers/:userId', async (req, res) => {
   try {
-    const user = await UserModel.findById(req.params.userId).populate('followers', 'username email');
-    res.json(user.followers);
+    const user = await UserModel.findOne({ uid: req.params.userId });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json(user.followers); 
   } catch (err) {
+    console.error('Error fetching followers:', err);
     res.status(500).json({ message: "Server error", error: err });
   }
 });
+
+
 
 
 app.get('/following/:userId', async (req, res) => {
   try {
-    const user = await UserModel.findById(req.params.userId).populate('following', 'username email');
+    const user = await UserModel.findOne({ uid: req.params.userId });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
     res.json(user.following);
   } catch (err) {
+    console.error('Error fetching following:', err);
     res.status(500).json({ message: "Server error", error: err });
   }
 });
+
+app.get('/getCurrentUserEmail', (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ message: 'No token provided' });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    res.json({ email: decoded.email, uid: decoded.uid });
+  } catch (error) {
+    console.error("Error decoding token:", error);
+    res.status(500).json({ message: "Failed to decode token", error: error.message });
+  }
+});
+
+
+
 
 app.listen(3000, () => {
   console.log("Server is running on port 3000");

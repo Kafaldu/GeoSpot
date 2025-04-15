@@ -3,6 +3,9 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-nativ
 import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from "@react-navigation/native";
 import axios from "axios";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -10,24 +13,34 @@ const Login = () => {
   const [error, setError] = useState("");
   const navigation = useNavigation();
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setError("");
   
-    axios.post('http://localhost:3000/login', { email, password })  
-      .then(result => {
-        if (result.data.message === "Success") {
-          
-          const loggedInEmail = result.data.user.email;
-          navigation.navigate('HomeTabs', { screen: 'UserProfilePage', params: { email: loggedInEmail } });
-        } else {
-          setError(result.data.message || "Invalid credentials. Please try again.");
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        setError("An error occurred. Please try again later.");
-      });
+    try {
+      const result = await axios.post('http://localhost:3000/login', { email, password });
+  
+      if (result.data.message === "Success") {
+        const loggedInEmail = result.data.user.email;
+        const loggedInUid = result.data.user.uid;
+  
+        // ✅ Store user info in AsyncStorage
+        await AsyncStorage.setItem('userEmail', loggedInEmail);
+        await AsyncStorage.setItem('userUid', loggedInUid); // ✅ <-- THIS IS THE FIX
+  
+        // 🔁 Navigate to the profile page
+        navigation.navigate('HomeTabs', {
+          screen: 'UserProfilePage',
+          params: { email: loggedInEmail }
+        });
+      } else {
+        setError(result.data.message || "Invalid credentials. Please try again.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("An error occurred. Please try again later.");
+    }
   };
+  
   
 
   return (

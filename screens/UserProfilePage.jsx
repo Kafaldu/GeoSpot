@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput } from "react-native";
-import { useRoute } from "@react-navigation/native";
+import { useRoute, useNavigation } from "@react-navigation/native";
+import { Ionicons } from '@expo/vector-icons';
 import axios from "axios";
 import * as ImagePicker from 'expo-image-picker';
-
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const UserProfilePage = () => {
@@ -23,11 +23,15 @@ const UserProfilePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-
-
+  const [addFriendsModalVisible, setAddFriendsModalVisible] = useState(false);
+  const debounceTimeout = useRef(null);
+  const navigation = useNavigation();
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [currentUserUid, setCurrentUserUid] = useState(null);
+  const [isFollowingViewedUser, setIsFollowingViewedUser] = useState(false);
 
   const route = useRoute();
-  const email = route.params?.email;
+  const viewedEmail = route.params?.email;
 
   
   
@@ -57,13 +61,13 @@ const UserProfilePage = () => {
   
       // Upload
       axios.post('http://localhost:3000/updateProfilePicture', {
-        email: email,
+        email: viewedEmail,
         image: base64Img,
       })
       .then(response => {
         console.log('Profile picture updated successfully');
         // Refresh profile
-        axios.post('http://localhost:3000/UserProfilePage', { email: email })
+        axios.post('http://localhost:3000/UserProfilePage', { email: viewedEmail })
           .then((result) => {
             setUser(result.data);
             setBioInput(result.data.bio || '');        
@@ -82,13 +86,13 @@ const UserProfilePage = () => {
   const handleSavePetName = async () => {
     try {
       await axios.post('http://localhost:3000/updatePetName', {
-        email: email,
+        email: viewedEmail,
         petName: user.petName
       });
       alert('Pet name updated successfully!');
   
       // Refresh the user data after saving
-      axios.post("http://localhost:3000/UserProfilePage", { email })
+      axios.post("http://localhost:3000/UserProfilePage", { email: viewedEmail })
         .then((result) => {
           setUser(result.data);
         })
@@ -109,6 +113,7 @@ const UserProfilePage = () => {
   try {
     const response = await axios.post('http://localhost:3000/search', {
       username: searchQuery,
+      currentUserId: user.uid,
     });
 
     setSearchResults(response.data);
@@ -119,84 +124,153 @@ const UserProfilePage = () => {
   }
 };
 
+const handleLiveSearch = (query) => {
+  if (debounceTimeout.current) {
+    clearTimeout(debounceTimeout.current);
+  }
+
+  debounceTimeout.current = setTimeout(async () => {
+    if (query.trim() === '') {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await axios.post('http://localhost:3000/search', {
+        username: query,
+        currentUserId: user.uid, 
+      });
+      setSearchResults(response.data);
+    } catch (error) {
+      console.error('Error searching for users:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  }, 300);
+};
+
 const handleFollow = async (targetUserId) => {
+  console.log("Inside handleFollow");
+
+  let storedUid = await AsyncStorage.getItem('userUid');
+
+  if (!storedUid && user?.uid) {
+    storedUid = user.uid;
+    console.log("Fallback to user.uid:", storedUid);
+  }
+
+  console.log("Current user UID:", storedUid);
+  console.log("Target user UID:", targetUserId);
+
+  if (!storedUid || !targetUserId) {
+    console.error('Missing current user UID or targetUserId');
+    return;
+  }
+
   try {
     const response = await axios.post('http://localhost:3000/follow', {
-      currentUserId: user._id,
+      currentUserId: storedUid,
       targetUserId,
     });
 
     if (response.data.message === "Followed successfully") {
-      alert("Friend added!");
+      console.log("Followed successfully!");
+      setIsFollowingViewedUser(true);
+
+      setSearchResults(prevResults =>
+        prevResults.map(result =>
+          result.uid === targetUserId ? { ...result, isFollowing: true } : result
+        )
+      );
     } else {
-      alert("Unable to follow.");
+      console.warn("Unexpected response from server:", response.data);
     }
   } catch (error) {
-    console.error("Error adding friend:", error);
-    alert("An error occurred while following.");
+    console.error("Error sending follow request:", error);
   }
 };
 
 
+
+
+
+
+
+
   // Simulate loading state
   useEffect(() => {
-    if (email) {
-      console.log("Fetching user data for email:", email);
-
-      axios.post("http://localhost:3000/UserProfilePage", { email })
-        .then((result) => {
-
-          console.log("Result from server:", result.data); 
-
-          setUser(result.data);
-          setBioInput(result.data.bio || '');
-          setUsernameInput(result.data.username || '');
-          setLoading(false);
-
-          const generatedPhotos = [
-            {
-              url: "https://picsum.photos/id/237/300/300",
-              postedBy: result.data.username,   // <-- grab username
-              date: new Date().toLocaleDateString('en-US')  // today's date
-            },
-            {
-              url: "https://picsum.photos/id/238/300/300",
-              postedBy: result.data.username,
-              date: new Date().toLocaleDateString('en-US')
-            },
-            {
-              url: "https://picsum.photos/id/239/300/300",
-              postedBy: result.data.username,
-              date: new Date().toLocaleDateString('en-US')
-            },
-            {
-              url: "https://picsum.photos/id/240/300/300",
-              postedBy: result.data.username,
-              date: new Date().toLocaleDateString('en-US')
-            },
-            {
-              url: "https://picsum.photos/id/241/300/300",
-              postedBy: result.data.username,
-              date: new Date().toLocaleDateString('en-US')
-            },
-            {
-              url: "https://picsum.photos/id/242/300/300",
-              postedBy: result.data.username,
-              date: new Date().toLocaleDateString('en-US')
-            },
-          ];
-          setPhotoUrls(generatedPhotos);
-        })
-        .catch((err) => {
-          console.error(err);
-          setError("Failed to load user data.");
-          setLoading(false);
+    const fetchUserData = async () => {
+      if (!viewedEmail) {
+        setError("No email provided.");
+        setLoading(false);
+        return;
+      }
+    
+      try {
+        const currentUserEmail = await AsyncStorage.getItem('userEmail');
+        const currentUid = await AsyncStorage.getItem('userUid');
+        setCurrentUserUid(currentUid);
+        setIsOwnProfile(currentUserEmail === viewedEmail);
+    
+        // Fetch viewed user
+        const viewedUserResponse = await axios.post("http://localhost:3000/UserProfilePage", {
+          email: viewedEmail,
         });
-    } else {
-      setError("No email provided.");
-      setLoading(false);
-    }
-  }, [email]);
+        const viewedUserData = viewedUserResponse.data;
+    
+        // Fetch current user 
+        const currentUserResponse = await axios.post("http://localhost:3000/UserProfilePage", {
+          email: currentUserEmail,
+        });
+        const currentUserData = currentUserResponse.data;
+    
+        console.log("Viewed UID:", viewedUserData.uid);
+        console.log("Current user's following:", currentUserData.following);
+    
+        //Check if current user follows the viewed user
+        const followingArray = currentUserData.following || [];
+        const isFollowing = followingArray.some(f => {
+          if (typeof f === 'string') {
+            return f === viewedUserData.uid;
+          } else if (f?.uid) {
+            return f.uid === viewedUserData.uid;
+          }
+          return false;
+        });
+    
+        setIsFollowingViewedUser(isFollowing);
+    
+        //Set viewed user's data (not current user)
+        const cleanedFollowing = (viewedUserData.following || []).map(f =>
+          typeof f === 'string' ? { uid: f } : f
+        );
+    
+        setUser({
+          ...viewedUserData,
+          following: cleanedFollowing,
+        });
+    
+        setBioInput(viewedUserData.bio || '');
+        setUsernameInput(viewedUserData.username || '');
+    
+        const generatedPhotos = Array.from({ length: 6 }, (_, i) => ({
+          url: `https://picsum.photos/id/${237 + i}/300/300`,
+          postedBy: viewedUserData.username,
+          date: new Date().toLocaleDateString('en-US'),
+        }));
+        setPhotoUrls(generatedPhotos);
+      } catch (err) {
+        console.error("Error loading profile:", err);
+        setError("Failed to load user data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+  
+    fetchUserData();
+  }, [viewedEmail]);
   
   if (loading) {
     return <Text>Loading...</Text>;
@@ -207,6 +281,27 @@ const handleFollow = async (targetUserId) => {
   }
   return (
     <ScrollView style={styles.container}>
+      
+      {/* Add Friends Icon */}
+{/* Add Friends or Back Arrow depending on profile */}
+<View style={{ flexDirection: 'row', justifyContent: 'flex-start', marginBottom: 10 }}>
+  {!isOwnProfile ? (
+    <TouchableOpacity onPress={() => {
+      AsyncStorage.getItem('userEmail').then(myEmail => {
+        navigation.navigate("UserProfilePage", { email: myEmail });
+      });
+    }}>
+      <Ionicons name="arrow-back-outline" size={30} color="#68d391" />
+    </TouchableOpacity>
+  ) : (
+    <TouchableOpacity onPress={() => setAddFriendsModalVisible(true)}>
+      <Ionicons name="person-add-outline" size={30} color="#68d391" />
+    </TouchableOpacity>
+  )}
+</View>
+
+
+
       {/* Profile Section */}
       <View style={styles.profileContainer}>
         <Image 
@@ -226,6 +321,8 @@ const handleFollow = async (targetUserId) => {
 
       {/* Edit Profile / Settings */}
       <View style={styles.buttonsContainer}>
+  {isOwnProfile ? (
+    <>
       <TouchableOpacity 
         style={styles.followButton} 
         onPress={() => setEditProfileModalVisible(true)}
@@ -238,7 +335,23 @@ const handleFollow = async (targetUserId) => {
       >
         <Text style={styles.buttonText}>Settings</Text>
       </TouchableOpacity>
-      </View>
+    </>
+  ) : (
+    <TouchableOpacity 
+      style={[
+        styles.followButton, 
+        { backgroundColor: isFollowingViewedUser ? "#aaa" : "#48bb78" }
+      ]}
+      disabled={isFollowingViewedUser}
+      onPress={() => handleFollow(user.uid)}
+    >
+      <Text style={styles.buttonText}>
+        {isFollowingViewedUser ? "Following" : "Follow"}
+      </Text>
+    </TouchableOpacity>
+  )}
+</View>
+
 
       {/* Stats Section*/}
       <View style={styles.statsContainer}>
@@ -286,7 +399,8 @@ const handleFollow = async (targetUserId) => {
           </View>
         </View>
       </View>
-
+      
+      {/*
       <View style={{ marginTop: 15}}>
         <Text style={{ fontSize: 18, fontWeight: "bold", color: "#fff", marginBottom: 5 }}>Find Friends</Text>
 
@@ -353,7 +467,8 @@ const handleFollow = async (targetUserId) => {
           </View>
         )}
       </View>
-      
+      */}
+
       {/* Pet Section */}
       <View style={styles.titleContainer}>
         <Text style={styles.petTitle}>Your Pet</Text>
@@ -386,7 +501,7 @@ const handleFollow = async (targetUserId) => {
         <TouchableOpacity
           key={index}
           onPress={() => {
-            setSelectedPhoto(photo);  // set the whole photo object
+            setSelectedPhoto(photo);  
             setModalVisible(true);  
           }}
         >
@@ -470,7 +585,7 @@ const handleFollow = async (targetUserId) => {
             style={styles.saveButton}
             onPress={() => {
               axios.post('http://localhost:3000/updateProfile', {
-                email: email,
+                email: viewedEmail,
                 username: usernameInput,
                 bio: bioInput
               })
@@ -486,7 +601,7 @@ const handleFollow = async (targetUserId) => {
                 setEditProfileModalVisible(false);
               
                 setTimeout(() => {
-                  axios.post("http://localhost:3000/UserProfilePage", { email })
+                  axios.post("http://localhost:3000/UserProfilePage", { email: viewedEmail })
                     .then((result) => {
                       setUser(result.data);
                       setBioInput(result.data.bio || '');
@@ -607,6 +722,101 @@ const handleFollow = async (targetUserId) => {
     </View>
   </View>
 </Modal>
+
+{/* Add friends modal*/}
+<Modal
+  visible={addFriendsModalVisible}
+  transparent={true}
+  animationType="slide"
+  onRequestClose={() => setAddFriendsModalVisible(false)}
+>
+  <View style={styles.editProfileModalBackground}>
+    <View style={styles.editProfileModalContent}>
+      <Text style={{ fontSize: 20, fontWeight: "bold", marginBottom: 20, color: "#68d391" }}>
+        Add Friends
+      </Text>
+
+      <TextInput
+        value={searchQuery}
+        onChangeText={(text) => {
+          setSearchQuery(text);
+          handleLiveSearch(text);
+        }}
+        placeholder="Search by username"
+        placeholderTextColor="#aaa"
+        style={styles.input}
+      />
+
+      <TouchableOpacity
+        onPress={handleSearch}
+        style={[styles.saveButton, { marginBottom: 10 }]}
+      >
+        <Text style={{ color: "#fff", fontWeight: "bold" }}>Search</Text>
+      </TouchableOpacity>
+
+      {isSearching && <Text style={{ color: "#fff", marginBottom: 10 }}>Searching...</Text>}
+
+      {searchResults.length > 0 && (
+        <ScrollView style={{ maxHeight: 200, width: "100%" }}>
+          {searchResults.map((resultUser) => (
+            <View
+              key={resultUser.uid}
+              style={{
+                backgroundColor: "#4a5568",
+                padding: 12,
+                marginBottom: 12,
+                borderRadius: 10,
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => navigation.navigate("UserProfilePage", {
+                  email: resultUser.email,   // Profile being viewed
+                  uid: resultUser.uid        
+                })}
+                style={{ flex: 1 }}
+              >
+                <View>
+                  <Text style={{ color: "#fff", fontWeight: "bold" }}>{resultUser.username}</Text>
+                  <Text style={{ color: "#aaa", fontSize: 12 }}>{resultUser.email}</Text>
+                </View>
+              </TouchableOpacity>
+
+
+              <TouchableOpacity
+                disabled={resultUser.isFollowing}
+                onPress={() => handleFollow(resultUser.uid)}
+                style={{
+                  backgroundColor: resultUser.isFollowing ? "#aaa" : "#38a169",
+                  paddingVertical: 12,
+                  paddingHorizontal: 12,
+                  borderRadius: 8,
+                  marginLeft: 10,
+                }}
+              >
+                <Text style={{ color: "#fff" }}>
+                  {resultUser.isFollowing ? "Added" : "Add"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </ScrollView>
+      )}
+
+      <TouchableOpacity
+        onPress={() => setAddFriendsModalVisible(false)}
+        style={{ marginTop: 15 }}
+      >
+        <Text style={{ color: "red" }}>Close</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
+
+
+
 
     </ScrollView>
   );
