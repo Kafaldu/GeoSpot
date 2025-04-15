@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleMap, useLoadScript, Circle } from '@react-google-maps/api';
 import { FaCamera, FaStar } from 'react-icons/fa';
+import { Marker } from '@react-google-maps/api';
 
 const mapContainerStyle = {
   width: '100%',
@@ -88,21 +89,17 @@ const Map = () => {
         onLoad={(map) => (mapRef.current = map)}
       >
         {/* Moving Blue Dot */}
-        <Circle
-          center={currentLocation}
-          radius={8} // radius in meters
-          options={{
-            strokeColor: '#4285F4',
-            strokeOpacity: 1,
-            strokeWeight: 2,
+        <Marker
+          position={currentLocation}
+          icon={{
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 8, // size in pixels
             fillColor: '#4285F4',
             fillOpacity: 1,
-            clickable: false,
-            draggable: false,
-            editable: false,
-            visible: true,
-            zIndex: 10,
+            strokeWeight: 2,
+            strokeColor: '#ffffff',
           }}
+          clickable={false}
         />
       </GoogleMap>
 

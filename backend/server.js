@@ -7,10 +7,15 @@ import dotenv from 'dotenv';
 dotenv.config();
 import { v4 as uuidv4 } from 'uuid';
 import cloudinary from './cloudinary.js';
+import feedRoutes from './routes/feed.routes.js';
+import userRoutes from './routes/user.routes.js';
+import { getUserProfile } from './controllers/user.controller.js';
 
 const app = express();
 
 app.use(express.json({ limit: '10mb' }));
+app.use('/api/feed', feedRoutes);
+app.use('/api/users/search', userRoutes);
 
 app.use(cors({
   origin: '*', 
@@ -107,35 +112,7 @@ mongoose.connect(process.env.MONGO_URI)
       });
   });
   
-
-app.post('/UserProfilePage', (req, res) => {
-  const { email } = req.body;
-  UserModel.findOne({ email: email })
-    .then(user => {
-      if (user) {
-        res.json({ 
-          username: user.username,
-          profilePicture: user.profilePicture, 
-          numPosts: user.numPosts,
-          numFollowers: user.numFollowers,
-          numFollowing: user.numFollowing,
-          userLevel: user.userLevel,
-          spotsVisited: user.spotsVisited,
-          streak: user.streak,
-          memberSince: user.memberSince,
-          bio: user.bio,
-          pet: user.pet,
-          petLevel: user.petLevel,
-          petName: user.petName,
-          petCurrency: user.petCurrency
-        });
-        
-      } else {
-        res.json("No user found with that email");
-      }
-    })
-    .catch(err => res.json(err));
-});
+app.post('/UserProfilePage', getUserProfile);
 
 app.post('/updatePetName', async (req, res) => {
   const { email, petName } = req.body;

@@ -20,6 +20,9 @@ const UserProfilePage = () => {
   const [settingsModalVisible, setSettingsModalVisible] = useState(false);
   const [petModalVisible, setPetModalVisible] = useState(false);
   const [photoUrls, setPhotoUrls] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
 
 
 
@@ -98,6 +101,42 @@ const UserProfilePage = () => {
       alert('Failed to update pet name.');
     }
   };
+
+  const handleSearch = async () => {
+  if (searchQuery.trim() === '') return;
+
+  setIsSearching(true);
+  try {
+    const response = await axios.post('http://localhost:3000/search', {
+      username: searchQuery,
+    });
+
+    setSearchResults(response.data);
+    setIsSearching(false);
+  } catch (error) {
+    console.error('Error searching for users:', error);
+    setIsSearching(false);
+  }
+};
+
+const handleFollow = async (targetUserId) => {
+  try {
+    const response = await axios.post('http://localhost:3000/follow', {
+      currentUserId: user._id,
+      targetUserId,
+    });
+
+    if (response.data.message === "Followed successfully") {
+      alert("Friend added!");
+    } else {
+      alert("Unable to follow.");
+    }
+  } catch (error) {
+    console.error("Error adding friend:", error);
+    alert("An error occurred while following.");
+  }
+};
+
 
   // Simulate loading state
   useEffect(() => {
@@ -248,6 +287,72 @@ const UserProfilePage = () => {
         </View>
       </View>
 
+      <View style={{ marginTop: 15}}>
+        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#fff", marginBottom: 5 }}>Find Friends</Text>
+
+        <TextInput
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search by username"
+          placeholderTextColor="#aaa"
+          style={{
+            backgroundColor: "#4a5568",
+            padding: 12,
+            borderRadius: 10,
+            color: "#fff",
+            marginBottom: 5,
+          }}
+        />
+        <TouchableOpacity
+          onPress={handleSearch}
+          style={{
+            backgroundColor: "#48bb78",
+            paddingVertical: 12,
+            borderRadius: 10,
+            alignItems: "center",
+            marginBottom: 25,
+          }}
+        >
+          <Text style={{ color: "#fff", fontWeight: "bold" }}>Search</Text>
+        </TouchableOpacity>
+
+        {isSearching && <Text style={{ color: "#fff", marginTop: 10 }}>Searching...</Text>}
+
+        {searchResults.length > 0 && (
+          <View style={{ marginTop: 20 }}>
+            {searchResults.map((resultUser) => (
+              <View
+                key={resultUser._id}
+                style={{
+                  backgroundColor: "#4a5568",
+                  padding: 12,
+                  marginBottom: 12,
+                  borderRadius: 10,
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <View>
+                  <Text style={{ color: "#fff", fontWeight: "bold" }}>{resultUser.username}</Text>
+                  <Text style={{ color: "#aaa", fontSize: 12 }}>{resultUser.email}</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => handleFollow(resultUser._id)}
+                  style={{
+                    backgroundColor: "#38a169",
+                    paddingVertical: 12,
+                    paddingHorizontal: 12,
+                    borderRadius: 8,
+                  }}
+                >
+                  <Text style={{ color: "#fff" }}>Add</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
       
       {/* Pet Section */}
       <View style={styles.titleContainer}>

@@ -6,7 +6,7 @@ const postSchema = new mongoose.Schema({
   imageUrl: { type: String, required: true },
   description: { type: String },
   date: { type: Date, default: Date.now },
-  location: { type: String }, // optional for local feed
+  location: { type: String },
 });
 
 const PostModel = mongoose.model('Post', postSchema);

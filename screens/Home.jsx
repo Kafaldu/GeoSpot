@@ -12,7 +12,11 @@ const Home = () => {
           ? 'http://localhost:3000/friendsFeed' 
           : 'http://localhost:3000/localFeed';
         
-        const response = await axios.get(endpoint);
+        const response = await axios.get(endpoint, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
         setPosts(response.data);
       } catch (error) {
         console.error('Error fetching posts:', error);
