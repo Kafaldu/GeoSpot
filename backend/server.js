@@ -11,18 +11,22 @@ import feedRoutes from './routes/feed.routes.js';
 import userRoutes from './routes/user.routes.js';
 import { getUserProfile } from './controllers/user.controller.js';
 import jwt from 'jsonwebtoken';
+import locationsRouter from './routes/locations.js';
 
 const app = express();
-
-app.use(express.json({ limit: '10mb' }));
-app.use('/api/feed', feedRoutes);
-app.use('/api/users/search', userRoutes);
 
 app.use(cors({
   origin: '*', 
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'], 
 }));
+
+app.use(express.json({ limit: '10mb' }));
+app.use('/api/feed', feedRoutes);
+app.use('/api/users/search', userRoutes);
+app.use('/api/locations', locationsRouter);
+
+
 
 
 mongoose.connect(process.env.MONGO_URI)
