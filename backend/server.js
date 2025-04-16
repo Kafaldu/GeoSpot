@@ -21,8 +21,9 @@ app.use('/api/users/search', userRoutes);
 app.use(cors({
   origin: '*', 
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type'],
+  allowedHeaders: ['Content-Type', 'Authorization'], 
 }));
+
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected'))
@@ -138,9 +139,15 @@ app.post('/createPost', async (req, res) => {
   const { userId, username, imageUrl, description, location } = req.body;
 
   try {
+    const user = await UserModel.findOne({ uid: userId }); 
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
     const newPost = await PostModel.create({
       userId,
       username,
+      userProfilePicture: user.profilePicture, 
       imageUrl,
       description,
       location,
@@ -153,19 +160,20 @@ app.post('/createPost', async (req, res) => {
   }
 });
 
+
 app.get('/friendsFeed/:userId', async (req, res) => {
   try {
-    const user = await UserModel.findById(req.params.userId);
+    const user = await UserModel.findOne({ uid: req.params.userId });
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const following = user.following || [];
     const followers = user.followers || [];
 
-    // Find mutual followers
-    const mutuals = following.filter(id => followers.includes(id));
+    const mutualUids = following
+      .map(f => typeof f === 'string' ? f : f.uid)
+      .filter(uid => followers.some(f => (typeof f === 'string' ? f : f.uid) === uid));
 
-    // Find posts by mutuals
-    const posts = await PostModel.find({ userId: { $in: mutuals } }).sort({ date: -1 });
+    const posts = await PostModel.find({ userId: { $in: mutualUids } }).sort({ date: -1 });
 
     res.json(posts);
   } catch (err) {
@@ -173,6 +181,7 @@ app.get('/friendsFeed/:userId', async (req, res) => {
     res.status(500).json({ message: "Server error", error: err });
   }
 });
+
 
 app.get('/localFeed/:location', async (req, res) => {
   try {

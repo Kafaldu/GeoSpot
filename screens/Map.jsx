@@ -93,7 +93,7 @@ const Map = () => {
           position={currentLocation}
           icon={{
             path: google.maps.SymbolPath.CIRCLE,
-            scale: 8, // size in pixels
+            scale: 8, 
             fillColor: '#4285F4',
             fillOpacity: 1,
             strokeWeight: 2,

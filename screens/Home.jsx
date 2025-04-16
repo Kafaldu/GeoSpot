@@ -8,23 +8,75 @@ const Home = () => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const endpoint = activeTab === 'friends' 
-          ? 'http://localhost:3000/friendsFeed' 
-          : 'http://localhost:3000/localFeed';
-        
+        const token = localStorage.getItem('token');
+        const rawUser = localStorage.getItem('user');
+  
+        if (!rawUser) {
+          console.error('User info not found in localStorage.');
+          return; 
+        }
+  
+        const userInfo = JSON.parse(rawUser);
+        let endpoint = '';
+  
+        if (activeTab === 'friends') {
+          endpoint = `http://localhost:3000/friendsFeed/${userInfo.uid}`;
+        } else {
+          endpoint = `http://localhost:3000/localFeed/${userInfo.location || 'Gainesville'}`;
+        }
+  
         const response = await axios.get(endpoint, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            Authorization: `Bearer ${token}`,
           },
         });
+  
         setPosts(response.data);
       } catch (error) {
         console.error('Error fetching posts:', error);
       }
     };
-
+  
     fetchPosts();
   }, [activeTab]);
+  
+  const createTestPost = async () => {
+    try {
+      const rawUser = localStorage.getItem('user');
+      if (!rawUser) {
+        console.error('User not found in localStorage');
+        return;
+      }
+  
+      const user = JSON.parse(rawUser);
+      if (!user.email) {
+        console.error('User email is missing');
+        return;
+      }
+  
+      const { data: dbUser } = await axios.get(`http://localhost:3000/user/${user.email}`);
+      if (!dbUser || !dbUser.uid) {
+        console.error('DB user not found');
+        return;
+      }
+  
+      await axios.post('http://localhost:3000/createPost', {
+        userId: dbUser.uid,
+        username: dbUser.username,
+        userProfilePicture: dbUser.profilePicture, 
+        imageUrl: 'https://picsum.photos/600/400',
+        description: 'Exploring Gainesville!',
+        location: 'Gainesville',
+        date: new Date(),
+      });
+  
+      alert('Test post created!');
+    } catch (error) {
+      console.error('Error creating test post:', error);
+    }
+  };
+  
+  
 
   return (
     <div style={styles.container}>
@@ -43,18 +95,30 @@ const Home = () => {
         </span>
       </div>
 
+      <button onClick={createTestPost}>Create Test Post</button>
+
       <div style={styles.feedContainer}>
         {posts.map((post, index) => (
           <div key={index} style={styles.postCard}>
-            <img src={post.imageUrl} alt="Post" style={styles.postImage} />
-            <div style={styles.postInfo}>
-              <div style={styles.postHeader}>
-                <span style={styles.username}>{post.username}</span>
-                <span style={styles.date}>{new Date(post.date).toLocaleDateString()}</span>
-              </div>
-              <p style={styles.description}>{post.description}</p>
-            </div>
+          <div style={styles.postHeader}>
+  <img 
+    src={post.userProfilePicture || 'https://via.placeholder.com/40'} 
+    alt="Profile"
+    style={styles.profileImage}
+  />
+  <div>
+    <span style={styles.username}>{post.username}</span>
+    <br />
+    <span style={styles.date}>{new Date(post.date).toLocaleDateString()}</span>
+  </div>
+</div>
+
+          <img src={post.imageUrl} alt="Post" style={styles.postImage} />
+          <div style={styles.postInfo}>
+            <p style={styles.description}>{post.description}</p>
           </div>
+        </div>
+        
         ))}
       </div>
     </div>
@@ -67,8 +131,10 @@ const styles = {
     minHeight: '100vh',
     padding: '20px',
     color: '#fff',
+    overflowY: 'auto', 
     fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   },
+  
   tabContainer: {
     display: 'flex',
     justifyContent: 'center',
@@ -129,6 +195,21 @@ const styles = {
     color: '#eee',
     fontSize: '14px',
   },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: '50%',
+    objectFit: 'cover',
+    marginRight: 10,
+  },
+  
+  postHeader: {
+    display: 'flex',
+    alignItems: 'center',      
+    padding: '10px 15px 0 15px', 
+    marginBottom: '10px',
+  },
+  
 };
 
 export default Home;

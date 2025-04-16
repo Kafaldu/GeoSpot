@@ -7,7 +7,7 @@ const UserSchema = new mongoose.Schema({
     uid: { type: String, required: true, unique: true },
     profilePicture: { type: String, default: "https://res.cloudinary.com/dbmpdoet6/image/upload/v1744226231/jxz9tcyulimodvceq47f.png" }, // <<< ADD THIS LINE
     bio: { type: String, default: "" },
-    userLevel: { type: Number, default: 0 },
+    userLevel: { type: Number, default: 1 },
     memberSince: { type: Date, default: Date.now },
     numPosts: { type: Number, default: 0 },
     numFollowers: { type: Number, default: 0 },

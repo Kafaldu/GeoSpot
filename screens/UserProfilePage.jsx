@@ -29,6 +29,8 @@ const UserProfilePage = () => {
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [currentUserUid, setCurrentUserUid] = useState(null);
   const [isFollowingViewedUser, setIsFollowingViewedUser] = useState(false);
+  const [followersModalVisible, setFollowersModalVisible] = useState(false);
+  const [followingModalVisible, setFollowingModalVisible] = useState(false);
 
   const route = useRoute();
   const viewedEmail = route.params?.email;
@@ -189,13 +191,49 @@ const handleFollow = async (targetUserId) => {
   } catch (error) {
     console.error("Error sending follow request:", error);
   }
+
+  // Refresh viewed user
+  axios.post("http://localhost:3000/UserProfilePage", { email: viewedEmail })
+  .then((result) => {
+    setUser(result.data);
+  })
+  .catch(err => {
+    console.error("Error refreshing viewed user after follow:", err);
+  });
 };
 
+const handleUnfollow = async (targetUserId) => {
+  try {
+    const storedUid = await AsyncStorage.getItem('userUid');
+    if (!storedUid || !targetUserId) return;
 
+    const response = await axios.post('http://localhost:3000/unfollow', {
+      currentUserId: storedUid,
+      targetUserId,
+    });
 
+    if (response.data.message === "Unfollowed successfully") {
+      setIsFollowingViewedUser(false);
 
+      setSearchResults(prevResults =>
+        prevResults.map(result =>
+          result.uid === targetUserId ? { ...result, isFollowing: false } : result
+        )
+      );
+    }
+  } catch (error) {
+    console.error("Error unfollowing user:", error);
+  }
 
-
+  // Refresh viewed user
+  axios.post("http://localhost:3000/UserProfilePage", { email: viewedEmail })
+  .then((result) => {
+    setUser(result.data);
+  })
+  .catch(err => {
+    console.error("Error refreshing viewed user after unfollow:", err);
+  });
+};
 
 
   // Simulate loading state
@@ -282,7 +320,6 @@ const handleFollow = async (targetUserId) => {
   return (
     <ScrollView style={styles.container}>
       
-      {/* Add Friends Icon */}
 {/* Add Friends or Back Arrow depending on profile */}
 <View style={{ flexDirection: 'row', justifyContent: 'flex-start', marginBottom: 10 }}>
   {!isOwnProfile ? (
@@ -342,8 +379,11 @@ const handleFollow = async (targetUserId) => {
         styles.followButton, 
         { backgroundColor: isFollowingViewedUser ? "#aaa" : "#48bb78" }
       ]}
-      disabled={isFollowingViewedUser}
-      onPress={() => handleFollow(user.uid)}
+      onPress={() =>
+        isFollowingViewedUser
+          ? handleUnfollow(user.uid)
+          : handleFollow(user.uid)
+      }
     >
       <Text style={styles.buttonText}>
         {isFollowingViewedUser ? "Following" : "Follow"}
@@ -359,15 +399,17 @@ const handleFollow = async (targetUserId) => {
           <Text style={styles.statsNumber}>{user.numPosts}</Text>
           <Text style={styles.statsLabel}>Posts</Text>
         </View>
-        <View style={styles.statsItem}>
+        <TouchableOpacity onPress={() => setFollowersModalVisible(true)} style={styles.statsItem}>
           <Text style={styles.statsNumber}>{user.numFollowers}</Text>
           <Text style={styles.statsLabel}>Followers</Text>
-        </View>
-        <View style={styles.statsItem}>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => setFollowingModalVisible(true)} style={styles.statsItem}>
           <Text style={styles.statsNumber}>{user.numFollowing}</Text>
           <Text style={styles.statsLabel}>Following</Text>
-        </View>
+        </TouchableOpacity>
       </View>
+
+
 
       {/* User Stats Section */}
       <View style={styles.userStatsContainer}>
@@ -400,74 +442,6 @@ const handleFollow = async (targetUserId) => {
         </View>
       </View>
       
-      {/*
-      <View style={{ marginTop: 15}}>
-        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#fff", marginBottom: 5 }}>Find Friends</Text>
-
-        <TextInput
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="Search by username"
-          placeholderTextColor="#aaa"
-          style={{
-            backgroundColor: "#4a5568",
-            padding: 12,
-            borderRadius: 10,
-            color: "#fff",
-            marginBottom: 5,
-          }}
-        />
-        <TouchableOpacity
-          onPress={handleSearch}
-          style={{
-            backgroundColor: "#48bb78",
-            paddingVertical: 12,
-            borderRadius: 10,
-            alignItems: "center",
-            marginBottom: 25,
-          }}
-        >
-          <Text style={{ color: "#fff", fontWeight: "bold" }}>Search</Text>
-        </TouchableOpacity>
-
-        {isSearching && <Text style={{ color: "#fff", marginTop: 10 }}>Searching...</Text>}
-
-        {searchResults.length > 0 && (
-          <View style={{ marginTop: 20 }}>
-            {searchResults.map((resultUser) => (
-              <View
-                key={resultUser._id}
-                style={{
-                  backgroundColor: "#4a5568",
-                  padding: 12,
-                  marginBottom: 12,
-                  borderRadius: 10,
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <View>
-                  <Text style={{ color: "#fff", fontWeight: "bold" }}>{resultUser.username}</Text>
-                  <Text style={{ color: "#aaa", fontSize: 12 }}>{resultUser.email}</Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => handleFollow(resultUser._id)}
-                  style={{
-                    backgroundColor: "#38a169",
-                    paddingVertical: 12,
-                    paddingHorizontal: 12,
-                    borderRadius: 8,
-                  }}
-                >
-                  <Text style={{ color: "#fff" }}>Add</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        )}
-      </View>
-      */}
 
       {/* Pet Section */}
       <View style={styles.titleContainer}>
@@ -690,34 +664,43 @@ const handleFollow = async (targetUserId) => {
       <Text style={styles.petInfoText}>Level: {user.petLevel !== undefined ? user.petLevel : "N/A"}</Text>
       <Text style={styles.petInfoText}>Currency: {user.petCurrency !== undefined ? user.petCurrency : 0} 🪙</Text>
 
-      <TextInput
-        value={user.petName}
-        onChangeText={(text) => setUser(prev => ({ ...prev, petName: text }))}
-        placeholder="Enter new pet name..."
-        placeholderTextColor="#888"
-        style={styles.input}
-      />
+      {isOwnProfile && (
+        <>
+          {/* Pet Name Input */}
+          <TextInput
+            value={user.petName}
+            onChangeText={(text) => {
+              setUser(prev => ({ ...prev, petName: text }));
+            }}
+            placeholder="Enter new pet name..."
+            placeholderTextColor="#888"
+            style={styles.input}
+          />
 
-      <TouchableOpacity 
-        style={styles.saveButton}
-        onPress={handleSavePetName}
-      >
-        <Text style={{ color: "white", fontWeight: "bold" }}>Save Pet Name</Text>
-      </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.saveButton}
+            onPress={handleSavePetName}
+          >
+            <Text style={{ color: "white", fontWeight: "bold" }}>Save Pet Name</Text>
+          </TouchableOpacity>
 
-      {/* Little Pet Shop Section */}
-      <Text style={styles.shopTitle}>Pet Shop</Text>
-      <View style={styles.shopContainer}>
-        <TouchableOpacity style={styles.shopItem} onPress={() => alert('Bought a Hat!')}>
-          <Text style={styles.shopItemText}>🎩 Hat</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.shopItem} onPress={() => alert('Bought a Toy!')}>
-          <Text style={styles.shopItemText}>🧸 Toy</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.shopItem} onPress={() => alert('Bought a Snack!')}>
-          <Text style={styles.shopItemText}>🍪 Snack</Text>
-        </TouchableOpacity>
-      </View>
+          {/* Little Pet Shop Section */}
+          <Text style={styles.shopTitle}>Pet Shop</Text>
+          <View style={styles.shopContainer}>
+            <TouchableOpacity style={styles.shopItem} onPress={() => alert('Bought a Hat!')}>
+              <Text style={styles.shopItemText}>🎩 Hat</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.shopItem} onPress={() => alert('Bought a Toy!')}>
+              <Text style={styles.shopItemText}>🧸 Toy</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.shopItem} onPress={() => alert('Bought a Snack!')}>
+              <Text style={styles.shopItemText}>🍪 Snack</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
+
+
 
     </View>
   </View>
@@ -773,7 +756,7 @@ const handleFollow = async (targetUserId) => {
             >
               <TouchableOpacity
                 onPress={() => navigation.navigate("UserProfilePage", {
-                  email: resultUser.email,   // Profile being viewed
+                  email: resultUser.email,   
                   uid: resultUser.uid        
                 })}
                 style={{ flex: 1 }}
@@ -815,6 +798,87 @@ const handleFollow = async (targetUserId) => {
   </View>
 </Modal>
 
+<Modal
+  visible={followersModalVisible}
+  transparent={true}
+  animationType="slide"
+  onRequestClose={() => setFollowersModalVisible(false)}
+>
+  <View style={styles.editProfileModalBackground}>
+    <View style={styles.editProfileModalContent}>
+      <Text style={{ fontSize: 20, fontWeight: "bold", marginBottom: 20, color: "#68d391" }}>
+        Followers
+      </Text>
+      <ScrollView style={{ maxHeight: 300, width: "100%" }}>
+        {user.followers && user.followers.map((follower) => (
+          <TouchableOpacity
+            key={follower.uid}
+            onPress={() => {
+              setFollowersModalVisible(false);
+              navigation.navigate("UserProfilePage", {
+                email: follower.email,
+              });
+            }}
+            style={{
+              backgroundColor: "#4a5568",
+              padding: 12,
+              borderRadius: 10,
+              marginBottom: 10,
+            }}
+          >
+            <Text style={{ color: "#fff", fontWeight: "bold" }}>{follower.username}</Text>
+            <Text style={{ color: "#aaa", fontSize: 12 }}>{follower.email}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      <TouchableOpacity onPress={() => setFollowersModalVisible(false)}>
+        <Text style={{ color: "red", marginTop: 15 }}>Close</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
+
+<Modal
+  visible={followingModalVisible}
+  transparent={true}
+  animationType="slide"
+  onRequestClose={() => setFollowingModalVisible(false)}
+>
+  <View style={styles.editProfileModalBackground}>
+    <View style={styles.editProfileModalContent}>
+      <Text style={{ fontSize: 20, fontWeight: "bold", marginBottom: 20, color: "#68d391" }}>
+        Following
+      </Text>
+      <ScrollView style={{ maxHeight: 300, width: "100%" }}>
+        {user.following && user.following.map((followed) => (
+          <TouchableOpacity
+            key={followed.uid}
+            onPress={() => {
+              setFollowingModalVisible(false);
+              navigation.navigate("UserProfilePage", {
+                email: followed.email,
+              });
+            }}
+            style={{
+              backgroundColor: "#4a5568",
+              padding: 12,
+              borderRadius: 10,
+              marginBottom: 10,
+            }}
+          >
+            <Text style={{ color: "#fff", fontWeight: "bold" }}>{followed.username}</Text>
+            <Text style={{ color: "#aaa", fontSize: 12 }}>{followed.email}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      <TouchableOpacity onPress={() => setFollowingModalVisible(false)}>
+        <Text style={{ color: "red", marginTop: 15 }}>Close</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
 
 
 

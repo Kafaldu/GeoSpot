@@ -20,14 +20,24 @@ const Login = () => {
       const result = await axios.post('http://localhost:3000/login', { email, password });
   
       if (result.data.message === "Success") {
+        
+        await AsyncStorage.removeItem('user');
+  
+        
         const loggedInEmail = result.data.user.email;
         const loggedInUid = result.data.user.uid;
   
-        // ✅ Store user info in AsyncStorage
+        await AsyncStorage.setItem('user', JSON.stringify({
+          email: loggedInEmail,
+          uid: loggedInUid,
+          username: result.data.user.username,
+        }));
+        
+    
         await AsyncStorage.setItem('userEmail', loggedInEmail);
-        await AsyncStorage.setItem('userUid', loggedInUid); // ✅ <-- THIS IS THE FIX
+        await AsyncStorage.setItem('userUid', loggedInUid);
   
-        // 🔁 Navigate to the profile page
+     
         navigation.navigate('HomeTabs', {
           screen: 'UserProfilePage',
           params: { email: loggedInEmail }
@@ -40,6 +50,7 @@ const Login = () => {
       setError("An error occurred. Please try again later.");
     }
   };
+  
   
   
 

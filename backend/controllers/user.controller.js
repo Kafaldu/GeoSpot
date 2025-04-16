@@ -1,36 +1,48 @@
 import UserModel from '../models/user.model.js';
 
 export const getUserProfile = async (req, res) => {
-  const { email } = req.body;
-  
   try {
+    const { email } = req.body;
+
     const user = await UserModel.findOne({ email });
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    res.json({ 
-      username: user.username,
-      profilePicture: user.profilePicture, 
-      numPosts: user.numPosts,
-      numFollowers: user.numFollowers,
-      numFollowing: user.numFollowing,
-      userLevel: user.userLevel,
-      spotsVisited: user.spotsVisited,
-      streak: user.streak,
-      memberSince: user.memberSince,
-      bio: user.bio,
-      pet: user.pet,
-      petLevel: user.petLevel,
-      petName: user.petName,
-      petCurrency: user.petCurrency,
-      uid: user.uid,
-      following: user.following
-    });
+    
+    const populatedFollowers = await Promise.all(
+      (user.followers || []).map(async (follower) => {
+        if (follower.username) return follower;
+        const fullUser = await UserModel.findOne({ uid: follower.uid });
+        return fullUser ? {
+          uid: fullUser.uid,
+          email: fullUser.email,
+          username: fullUser.username
+        } : follower;
+      })
+    );
 
+    const populatedFollowing = await Promise.all(
+      (user.following || []).map(async (followed) => {
+        if (followed.username) return followed;
+        const fullUser = await UserModel.findOne({ uid: followed.uid });
+        return fullUser ? {
+          uid: fullUser.uid,
+          email: fullUser.email,
+          username: fullUser.username
+        } : followed;
+      })
+    );
+
+    const enrichedUser = {
+      ...user.toObject(),
+      followers: populatedFollowers,
+      following: populatedFollowing,
+    };
+
+    res.json(enrichedUser);
   } catch (err) {
-    console.error('Error in getUserProfile:', err);
-    res.status(500).json({ message: "Server error", error: err });
+    console.error("Error in getUserProfile:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
