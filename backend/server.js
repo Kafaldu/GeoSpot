@@ -436,8 +436,88 @@ app.get('/getCurrentUserEmail', (req, res) => {
   }
 });
 
+// Like/unlike post
+app.post('/likePost', async (req, res) => {
+  try {
+    const { postId, userId } = req.body;
 
+    const post = await PostModel.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
 
+    const isLiked = post.likes.includes(userId);
+    
+    if (isLiked) {
+      // Unlike 
+      post.likes = post.likes.filter(id => id !== userId);
+    } else {
+      // Like 
+      post.likes.push(userId);
+    }
+
+    await post.save();
+    
+    res.json({ 
+      message: isLiked ? "Post unliked" : "Post liked",
+      likes: post.likes.length
+    });
+    
+  } catch (err) {
+    console.error('Error toggling like:', err);
+    res.status(500).json({ message: "Server error", error: err });
+  }
+});
+
+// add comment  
+app.post('/addComment', async (req, res) => {
+  try {
+    const { postId, userId, username, userProfilePicture, text } = req.body;
+
+    const post = await PostModel.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    const newComment = {
+      userId,
+      username,
+      userProfilePicture,
+      text,
+      date: new Date()
+    };
+
+    post.comments.push(newComment);
+    await post.save();
+    
+    res.json({ 
+      message: "Comment added successfully",
+      comment: newComment
+    });
+    
+  } catch (err) {
+    console.error('Error adding comment:', err);
+    res.status(500).json({ message: "Server error", error: err });
+  }
+});
+
+// Get all comments for a post
+app.get('/comments/:postId', async (req, res) => {
+  try {
+    const { postId } = req.params;
+
+    const post = await PostModel.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    res.json(post.comments);
+    
+  } catch (err) {
+    console.error('Error fetching comments:', err);
+    res.status(500).json({ message: "Server error", error: err });
+  }
+});
 
 app.listen(3000, () => {
   console.log("Server is running on port 3000");

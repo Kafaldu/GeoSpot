@@ -1,4 +1,5 @@
 Setup Instructions:
+
 1. Install backend dependencies:
    cd backend
    npm install
@@ -22,11 +23,13 @@ Setup Instructions:
    Press 'w' to run in web browser.
 
 Expo Setup (if you don't have Expo CLI):
+
 - Install Expo CLI globally: npm install -g expo-cli
 - Create a free Expo account at https://expo.dev/
 - (Optional) Install Expo Go app on your phone to test on physical device.
 
 Important Notes:
+
 - Backend must be running before using the app.
 - Signup generates a unique UID for each user.
 - Duplicate email protection is implemented.
@@ -38,3 +41,12 @@ Important Notes:
 - right click on screen, click inspect
 - navigate to little phone icon and click on it
 - select type of phone display you would like to visualize
+
+Features:
+
+- Offline mode: Cached map data used when API is unavailable with visual indicators
+- Social interaction: Users can now like posts and add comments
+- Map-based location discovery with daily reveals
+- Profile customization with virtual pets
+- Friend system with following/followers
+- Local and friends feed for posts
