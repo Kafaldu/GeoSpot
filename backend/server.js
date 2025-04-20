@@ -392,7 +392,23 @@ app.post('/search', async (req, res) => {
   }
 });
 
+app.post('/uploadPhoto', async (req, res) => {
+  const { image } = req.body;
 
+  try {
+    if (!image) return res.status(400).json({ message: "No image provided" });
+
+    const uploadResponse = await cloudinary.uploader.upload(image, {
+      upload_preset: 'ml_default',
+    });
+
+    res.json({ imageUrl: uploadResponse.secure_url });
+    console.log("✅ Uploaded image URL:", uploadResponse.secure_url);
+  } catch (err) {
+    console.error('Error uploading photo:', err);
+    res.status(500).json({ message: "Server error", error: err });
+  }
+});  
 
 
 
@@ -439,6 +455,6 @@ app.get('/getCurrentUserEmail', (req, res) => {
 
 
 
-app.listen(3000, () => {
+app.listen(3000, 'YOUR IP HERE', () => {
   console.log("Server is running on port 3000");
 });

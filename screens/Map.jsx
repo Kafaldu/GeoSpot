@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+/*import React, { useState, useEffect, useRef } from 'react';
 import { GoogleMap, useLoadScript, Circle, Marker, DirectionsRenderer } from '@react-google-maps/api';
 import { FaCamera, FaStar } from 'react-icons/fa';
 import ReactModal from 'react-modal';
@@ -46,10 +46,14 @@ const Map = () => {
     lng: -82.34286694879195,
   });
 
+  const [photoFile, setPhotoFile] = useState(null);
+  const fileInputRef = useRef(null);
+
+
   useEffect(() => {
     const fetchLocations = async () => {
       try {
-        const res = await fetch('http://localhost:3000/api/locations');
+        const res = await fetch('http://YOUR IP HERE:3000/api/locations');
         const data = await res.json();
         console.log('Fetched locations:', data); 
         setAvailableLocations(data);
@@ -201,13 +205,50 @@ const Map = () => {
       return;
     }
   
-    setCameraOpen(true);
-    alert('Camera would open here!');
+    if (fileInputRef.current) {
+      fileInputRef.current.click(); // Triggers the hidden file input
+    }
   };
+
+  const handleFileChange = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+  
+    setPhotoFile(file);
+  
+    const formData = new FormData();
+    formData.append('photo', file);
+  
+    try {
+      const res = await fetch('http://YOUR IP HERE:3000/api/posts/uploadPhoto', {
+        method: 'POST',
+        body: formData,
+      });
+  
+      const result = await res.json();
+      if (res.ok) {
+        console.log('✅ Photo uploaded successfully:', result);
+        alert('✅ Photo uploaded!');
+      } else {
+        console.error('❌ Upload failed:', result);
+        alert('Upload failed');
+      }
+    } catch (err) {
+      console.error('❌ Error uploading photo:', err);
+      alert('Upload error');
+    }
+  };
+  
 
 
   const handleTestChangeLocation = () => {
-    console.log('🔁 Change Location Button Clicked');
+    if (destination) {
+      setCurrentLocation(destination);
+      console.log("✅ Current location manually set to destination for testing.");
+    } else {
+      console.warn("⚠️ No destination defined yet.");
+    }
+    /*console.log('🔁 Change Location Button Clicked');
     if (availableLocations.length === 0) {
       console.warn('⚠️ No available locations to switch to!');
       return;
@@ -223,7 +264,7 @@ const Map = () => {
       });
     } else {
       console.warn('⚠️ Chosen location has invalid coordinates:', next);
-    }
+    }/
   };
 
   const handleHintClick = () => {
@@ -254,7 +295,7 @@ const Map = () => {
         options={mapOptions}
         onLoad={(map) => (mapRef.current = map)}
       >
-        {/* Moving Blue Dot */}
+        {/* Moving Blue Dot /}
         <Marker
           position={currentLocation}
           icon={{
@@ -349,7 +390,7 @@ const Map = () => {
       </button>
 
 
-      {/* Camera Button */}
+      {/* Camera Button /}
       <button style={styles.cameraButton} onClick={handleCameraClick}>
         {isNearLocation ? (
           <MdCameraAlt size={24} color="#2d3748" />
@@ -358,7 +399,7 @@ const Map = () => {
         )}
       </button>
 
-      {/* Hint Button */}
+      {/* Hint Button /}
       {isRevealed && (
         <button style={styles.hintButton} onClick={handleHintClick}>
           <span style={{ fontSize: 28, color: '#2d3748' }}>?</span>
@@ -407,6 +448,14 @@ const Map = () => {
   </button>
 </ReactModal>
 
+<input
+  type="file"
+  accept="image/*"
+  capture="environment"
+  ref={fileInputRef}
+  onChange={handleFileChange}
+  style={{ display: 'none' }}
+/>
 
 
     </div>
@@ -528,4 +577,431 @@ const mapOptions = {
 };
 
 
-export default Map;
+export default Map;*/
+
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Alert, Image } from 'react-native';
+import MapView, { Marker, Polyline } from 'react-native-maps';
+import * as Location from 'expo-location';
+import * as ImagePicker from 'expo-image-picker';
+import polyline from '@mapbox/polyline';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const MapScreen = () => {
+  const [location, setLocation] = useState(null);
+  const [destination, setDestination] = useState({
+    latitude: 29.650506721915335,
+    longitude: -82.34286694879195,
+  });
+  const [isRevealed, setIsRevealed] = useState(false);
+  const [timeUntilReveal, setTimeUntilReveal] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
+  const [hintText, setHintText] = useState('This is your hint! 🌟');
+  const [imageUri, setImageUri] = useState(null);
+  const [routeCoords, setRouteCoords] = useState([]);
+  const [user, setUser] = useState(null);
+  const isNearDestination = location && destination && (
+    Math.abs(location.latitude - destination.latitude) < 0.001 &&
+    Math.abs(location.longitude - destination.longitude) < 0.001
+  );
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission to access location was denied');
+        return;
+      }
+
+      const loc = await Location.getCurrentPositionAsync({});
+      setLocation(loc.coords);
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (isRevealed && location && destination) {
+      fetchRoute();
+    }
+  }, [isRevealed, location, destination]);  
+
+  useEffect(() => {
+    const updateTimer = () => {
+      const now = new Date();
+      const revealTime = new Date();
+      revealTime.setHours(9, 0, 0, 0); // 9AM
+
+      if (now >= revealTime) {
+        setIsRevealed(true);
+        setTimeUntilReveal("📍 Today’s spot is revealed!");
+      } else {
+        const diff = revealTime - now;
+        const hrs = Math.floor(diff / (1000 * 60 * 60));
+        const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const secs = Math.floor((diff % (1000 * 60)) / 1000);
+        setTimeUntilReveal(`🕒 ${hrs}:${mins}:${secs} until reveal`);
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        if (!user) {
+          const storedUser = await AsyncStorage.getItem('user');
+          if (storedUser) {
+            setUser(JSON.parse(storedUser));
+          } else {
+            console.warn('⚠️ No user stored in AsyncStorage');
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load user from storage:', err);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  const handlePickImage = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+  
+      if (status !== 'granted') {
+        Alert.alert("Permission Denied", "Please enable camera access in settings.");
+        return;
+      }
+  
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        quality: 0.7,
+        base64: true,
+      });
+  
+      if (!result.cancelled) {
+        //setImageUri(result.uri);
+
+        const asset = result.assets?.[0]; // ✅ safely grab the asset
+        if (!asset || !asset.base64) {
+          Alert.alert("Error", "Image capture failed or base64 not found.");
+          return;
+        }
+
+        const base64Image = `data:image/jpeg;base64,${asset.base64}`;
+        //const uploadedUrl = await uploadToCloudinary(base64Image);
+        console.log("📤 Base64 being sent:", base64Image.slice(0, 100));
+
+        const uploadResponse = await fetch('http://YOUR IP HERE:3000/uploadPhoto', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: base64Image }),
+        });
+
+        const uploadData = await uploadResponse.json();
+        console.log("🌐 Cloudinary upload response:", uploadData);
+        const imageUrl = uploadData.imageUrl;
+
+        if (!imageUrl) {
+          Alert.alert("Upload failed", "Could not get image URL.");
+          return;
+        }
+  
+        // ✅ Create the post after upload
+        const userData = await AsyncStorage.getItem('user');
+        const parsedUser = JSON.parse(userData);
+
+        const postResponse = await fetch('http://YOUR IP HERE:3000/createPost', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: parsedUser.uid,
+            username: parsedUser.username,
+            imageUrl,
+            location: 'Gainesville',
+            description: 'Exploring the spot!'
+          }),
+        });
+
+        const postData = await postResponse.json();
+
+        Alert.alert("✅ Post created!", "Your photo has been uploaded.");
+      }
+    } catch (err) {
+      console.error("❌ handlePickImage error:", err);
+      Alert.alert("Something went wrong", err.message || "Unknown error");
+    }
+  };
+  
+  
+  
+  const simulateArrival = () => {
+    setLocation(destination);
+    console.log('🔁 Teleported to destination:', destination);
+  };
+
+  const fetchRoute = async () => {
+    if (!location || !destination) return;
+  
+    const origin = `${location.latitude},${location.longitude}`;
+    const dest = `${destination.latitude},${destination.longitude}`;
+    const apiKey = 'YOUR_GOOGLE_MAPS_API_KEY'; // 🔐 Replace with your real API key
+  
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${dest}&mode=walking&key=${apiKey}`
+      );
+      const data = await response.json();
+  
+      if (data.routes.length) {
+        const points = polyline.decode(data.routes[0].overview_polyline.points);
+        const coords = points.map(([lat, lng]) => ({ latitude: lat, longitude: lng }));
+        setRouteCoords(coords);
+      } else {
+        console.warn('No route found');
+      }
+    } catch (err) {
+      console.error('Failed to fetch directions:', err);
+    }
+  };  
+
+  const updateDestinationToMyLocation = async () => {
+    try {
+      const loc = await Location.getCurrentPositionAsync({});
+      setDestination(loc.coords);
+      console.log('📍 Destination updated to:', loc.coords);
+      setIsRevealed(true); // Optional: auto-reveal after setting it
+    } catch (error) {
+      console.error('❌ Error fetching current location:', error);
+      Alert.alert('Failed to update destination');
+    }
+  };
+
+  const revealDestinationNow = () => {
+    setIsRevealed(true);
+    setTimeUntilReveal("📍 Destination manually revealed!");
+  };
+
+  const uploadToCloudinary = async (base64Image) => {
+    try {
+      const response = await fetch('http://YOUR IP HERE:3000/uploadPhoto', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64Image }),
+      });
+  
+      const data = await response.json();
+      return data.imageUrl;
+    } catch (err) {
+      console.error('Upload to Cloudinary failed:', err);
+      Alert.alert('Image upload failed');
+    }
+  };
+  
+  const createPost = async ({ userId, username, imageUrl, location, description }) => {
+    try {
+      const response = await fetch('http://YOUR IP HERE:3000/createPost', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          username,
+          imageUrl,
+          location,
+          description,
+        }),
+      });
+  
+      const data = await response.json();
+      Alert.alert('✅ Post created!');
+      return data;
+    } catch (err) {
+      console.error('Post creation failed:', err);
+      Alert.alert('❌ Failed to create post');
+    }
+  };
+  
+
+  if (!location) return <View style={styles.container}><Text>Loading map...</Text></View>;
+
+  return (
+    <View style={styles.container}>
+      <MapView
+        style={styles.map}
+        region={{
+          latitude: location.latitude,
+          longitude: location.longitude,
+          latitudeDelta: 0.005,
+          longitudeDelta: 0.005,
+        }}
+        customMapStyle={mapStyles}
+        showsUserLocation={true}
+        followsUserLocation={true}
+      >
+        {isRevealed && (
+          <>
+            {routeCoords.length > 0 && (
+              <Polyline
+                coordinates={routeCoords}
+                strokeColor="#00BFFF"
+                strokeWidth={4}
+              />
+            )}
+            <Marker
+              coordinate={destination}
+              title="Destination"
+              pinColor="green"
+            />
+          </>
+        )}
+      </MapView>
+
+      {/* UI Overlay */}
+      <View style={styles.overlay}>
+        <Text style={styles.revealText}>{timeUntilReveal}</Text>
+      </View>
+
+      {isRevealed && (
+          <TouchableOpacity style={styles.hintButton} onPress={() => setModalVisible(true)}>
+            <Text style={styles.buttonText}>Hint</Text>
+          </TouchableOpacity>
+        )}
+
+      {isNearDestination && !imageUri && (
+        <TouchableOpacity style={styles.cameraButton} onPress={handlePickImage}>
+          <Text style={styles.buttonText}>📷</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* New bottom buttons container */}
+      <View style={styles.testButtonsContainer}>
+        <TouchableOpacity style={styles.testButton} onPress={revealDestinationNow}>
+          <Text style={styles.testButtonText}>👀 Reveal Destination Now</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.testButton} onPress={simulateArrival}>
+          <Text style={styles.testButtonText}>🧪 Teleport to Destination</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.testButton} onPress={updateDestinationToMyLocation}>
+          <Text style={styles.testButtonText}>📍 Set Destination to My Location</Text>
+        </TouchableOpacity>
+      </View>
+
+      <Modal visible={modalVisible} animationType="slide" transparent>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalText}>{hintText}</Text>
+            <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+};
+
+const mapStyles = [
+  { elementType: 'geometry', stylers: [{ color: '#1d2c4d' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#8ec3b9' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#1a3646' }] },
+  { featureType: 'administrative.country', elementType: 'geometry.stroke', stylers: [{ color: '#4b6878' }] },
+  { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#023e58' }] },
+  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#304a7d' }] },
+  { featureType: 'road.local', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0e1626' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#4e6d70' }] },
+];
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  map: { flex: 1 },
+  overlay: {
+    position: 'absolute',
+    top: 40,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  revealText: {
+    backgroundColor: '#4a5568',
+    color: '#68d391',
+    padding: 10,
+    borderRadius: 10,
+    fontWeight: 'bold',
+  },
+  cameraButton: {
+    position: 'absolute',
+    bottom: 120,
+    right: 20,
+    backgroundColor: '#4299e1',
+    padding: 16,
+    borderRadius: 40,
+    zIndex: 10,
+  },
+  hintButton: {
+    position: 'absolute',
+    bottom: 120,
+    left: 20,
+    backgroundColor: '#4299e1',
+    padding: 16,
+    borderRadius: 40,
+    zIndex: 10,
+  },
+  testButton: {
+    position: 'absolute',
+    left: '50%',
+    transform: [{ translateX: -100 }],
+    backgroundColor: '#f6ad55',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    width: 200,
+    alignItems: 'center',
+  },
+  testButtonText: {
+    color: '#2d3748',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  buttonText: {
+    fontSize: 16,
+    color: '#2d3748',
+    fontWeight: 'bold',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#000000aa',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#2d3748',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+  },
+  modalText: {
+    color: '#fff',
+    marginBottom: 10,
+  },
+  closeButton: {
+    backgroundColor: '#f6ad55',
+    padding: 10,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  testButtonsContainer: {
+    position: 'absolute',
+    bottom: 160,
+    width: '100%',
+    alignItems: 'center',
+    gap: 10, // spacing between buttons (RN 0.71+)
+  },      
+});
+
+export default MapScreen;

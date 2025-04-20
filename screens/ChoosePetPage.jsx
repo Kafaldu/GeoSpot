@@ -46,7 +46,7 @@ const ChoosePetPage = () => {
   
         console.log("Chosen pet URL:", chosenPetImageURL);
   
-        await axios.post('http://localhost:3000/savePet', {
+        await axios.post('http://YOUR IP HERE:3000/savePet', {
           email: email,
           selectedPet: chosenPetImageURL,   
           petLevel: 1,
@@ -55,7 +55,7 @@ const ChoosePetPage = () => {
         
         });
   
-        navigation.navigate("ProfileCreationCompletePage", { pet: chosenPetImageURL }); 
+        navigation.navigate("ProfileCreationCompletePage", { email, pet: chosenPetImageURL }); 
   
       } catch (error) {
         console.error("Error saving pet:", error);

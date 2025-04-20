@@ -14,7 +14,7 @@ const SignUp = () => {
   const handleSubmit = () => {
     setError(""); 
   
-    axios.post('http://localhost:3000/signup', { username, email, password })
+    axios.post('http://YOUR IP HERE:3000/signup', { username, email, password })
       .then(result => {
         console.log(result);
         navigation.navigate('CreateProfile', { email: email }); 

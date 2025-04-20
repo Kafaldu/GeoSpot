@@ -4,8 +4,7 @@ import { useRoute, useNavigation } from "@react-navigation/native";
 import { Ionicons } from '@expo/vector-icons';
 import axios from "axios";
 import * as ImagePicker from 'expo-image-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import * as SecureStore from 'expo-secure-store';
 
 const UserProfilePage = () => {
   const [user, setUser] = useState(null);
@@ -35,208 +34,6 @@ const UserProfilePage = () => {
   const route = useRoute();
   const viewedEmail = route.params?.email;
 
-  
-  
-  const pickImage = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  
-    if (permissionResult.granted === false) {
-      alert('Permission to access camera roll is required!');
-      return;
-    }
-  
-    const pickerResult = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-      base64: true,
-    });
-  
-    if (!pickerResult.canceled) {
-      const base64Img = `data:image/jpg;base64,${pickerResult.assets[0].base64}`;
-  
-      if (!user) {
-        console.error("User not loaded yet, cannot upload image.");
-        return;
-      }
-  
-      // Upload
-      axios.post('http://localhost:3000/updateProfilePicture', {
-        email: viewedEmail,
-        image: base64Img,
-      })
-      .then(response => {
-        console.log('Profile picture updated successfully');
-        // Refresh profile
-        axios.post('http://localhost:3000/UserProfilePage', { email: viewedEmail })
-          .then((result) => {
-            setUser(result.data);
-            setBioInput(result.data.bio || '');        
-            setUsernameInput(result.data.username || ''); 
-          })
-          .catch(err => {
-            console.error("Error reloading user profile:", err);
-          });
-      })
-      .catch(error => {
-        console.error('Error updating profile picture:', error);
-      });
-    }
-  };
-  
-  const handleSavePetName = async () => {
-    try {
-      await axios.post('http://localhost:3000/updatePetName', {
-        email: viewedEmail,
-        petName: user.petName
-      });
-      alert('Pet name updated successfully!');
-  
-      // Refresh the user data after saving
-      axios.post("http://localhost:3000/UserProfilePage", { email: viewedEmail })
-        .then((result) => {
-          setUser(result.data);
-        })
-        .catch(err => {
-          console.error("Error refreshing user after pet name update:", err);
-        });
-  
-    } catch (error) {
-      console.error('Error updating pet name:', error);
-      alert('Failed to update pet name.');
-    }
-  };
-
-  const handleSearch = async () => {
-  if (searchQuery.trim() === '') return;
-
-  setIsSearching(true);
-  try {
-    const response = await axios.post('http://localhost:3000/search', {
-      username: searchQuery,
-      currentUserId: user.uid,
-    });
-
-    setSearchResults(response.data);
-    setIsSearching(false);
-  } catch (error) {
-    console.error('Error searching for users:', error);
-    setIsSearching(false);
-  }
-};
-
-const handleLiveSearch = (query) => {
-  if (debounceTimeout.current) {
-    clearTimeout(debounceTimeout.current);
-  }
-
-  debounceTimeout.current = setTimeout(async () => {
-    if (query.trim() === '') {
-      setSearchResults([]);
-      return;
-    }
-
-    setIsSearching(true);
-    try {
-      const response = await axios.post('http://localhost:3000/search', {
-        username: query,
-        currentUserId: user.uid, 
-      });
-      setSearchResults(response.data);
-    } catch (error) {
-      console.error('Error searching for users:', error);
-    } finally {
-      setIsSearching(false);
-    }
-  }, 300);
-};
-
-const handleFollow = async (targetUserId) => {
-  console.log("Inside handleFollow");
-
-  let storedUid = await AsyncStorage.getItem('userUid');
-
-  if (!storedUid && user?.uid) {
-    storedUid = user.uid;
-    console.log("Fallback to user.uid:", storedUid);
-  }
-
-  console.log("Current user UID:", storedUid);
-  console.log("Target user UID:", targetUserId);
-
-  if (!storedUid || !targetUserId) {
-    console.error('Missing current user UID or targetUserId');
-    return;
-  }
-
-  try {
-    const response = await axios.post('http://localhost:3000/follow', {
-      currentUserId: storedUid,
-      targetUserId,
-    });
-
-    if (response.data.message === "Followed successfully") {
-      console.log("Followed successfully!");
-      setIsFollowingViewedUser(true);
-
-      setSearchResults(prevResults =>
-        prevResults.map(result =>
-          result.uid === targetUserId ? { ...result, isFollowing: true } : result
-        )
-      );
-    } else {
-      console.warn("Unexpected response from server:", response.data);
-    }
-  } catch (error) {
-    console.error("Error sending follow request:", error);
-  }
-
-  // Refresh viewed user
-  axios.post("http://localhost:3000/UserProfilePage", { email: viewedEmail })
-  .then((result) => {
-    setUser(result.data);
-  })
-  .catch(err => {
-    console.error("Error refreshing viewed user after follow:", err);
-  });
-};
-
-const handleUnfollow = async (targetUserId) => {
-  try {
-    const storedUid = await AsyncStorage.getItem('userUid');
-    if (!storedUid || !targetUserId) return;
-
-    const response = await axios.post('http://localhost:3000/unfollow', {
-      currentUserId: storedUid,
-      targetUserId,
-    });
-
-    if (response.data.message === "Unfollowed successfully") {
-      setIsFollowingViewedUser(false);
-
-      setSearchResults(prevResults =>
-        prevResults.map(result =>
-          result.uid === targetUserId ? { ...result, isFollowing: false } : result
-        )
-      );
-    }
-  } catch (error) {
-    console.error("Error unfollowing user:", error);
-  }
-
-  // Refresh viewed user
-  axios.post("http://localhost:3000/UserProfilePage", { email: viewedEmail })
-  .then((result) => {
-    setUser(result.data);
-  })
-  .catch(err => {
-    console.error("Error refreshing viewed user after unfollow:", err);
-  });
-};
-
-
-  // Simulate loading state
   useEffect(() => {
     const fetchUserData = async () => {
       if (!viewedEmail) {
@@ -246,25 +43,30 @@ const handleUnfollow = async (targetUserId) => {
       }
     
       try {
-        const currentUserEmail = await AsyncStorage.getItem('userEmail');
-        const currentUid = await AsyncStorage.getItem('userUid');
+        const rawUser = await SecureStore.getItemAsync('user');
+        if (!rawUser) {
+          console.warn('No user found in SecureStore. Redirecting to login.');
+          navigation.replace('Login');
+          return;
+        }
+
+        const currentUserParsed = JSON.parse(rawUser);
+        const currentUserEmail = currentUserParsed?.email;
+        const currentUid = currentUserParsed?.uid;
         setCurrentUserUid(currentUid);
         setIsOwnProfile(currentUserEmail === viewedEmail);
     
         // Fetch viewed user
-        const viewedUserResponse = await axios.post("http://localhost:3000/UserProfilePage", {
+        const viewedUserResponse = await axios.post("http://YOUR IP HERE:3000/UserProfilePage", {
           email: viewedEmail,
         });
         const viewedUserData = viewedUserResponse.data;
     
         // Fetch current user 
-        const currentUserResponse = await axios.post("http://localhost:3000/UserProfilePage", {
+        const currentUserResponse = await axios.post("http://YOUR IP HERE:3000/UserProfilePage", {
           email: currentUserEmail,
         });
         const currentUserData = currentUserResponse.data;
-    
-        console.log("Viewed UID:", viewedUserData.uid);
-        console.log("Current user's following:", currentUserData.following);
     
         //Check if current user follows the viewed user
         const followingArray = currentUserData.following || [];
@@ -309,6 +111,204 @@ const handleUnfollow = async (targetUserId) => {
   
     fetchUserData();
   }, [viewedEmail]);
+  
+  const pickImage = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  
+    if (permissionResult.granted === false) {
+      alert('Permission to access camera roll is required!');
+      return;
+    }
+  
+    const pickerResult = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+      base64: true,
+    });
+  
+    if (!pickerResult.canceled) {
+      const base64Img = `data:image/jpg;base64,${pickerResult.assets[0].base64}`;
+  
+      if (!user) {
+        console.error("User not loaded yet, cannot upload image.");
+        return;
+      }
+  
+      // Upload
+      axios.post('http://YOUR IP HERE:3000/updateProfilePicture', {
+        email: viewedEmail,
+        image: base64Img,
+      })
+      .then(response => {
+        console.log('Profile picture updated successfully');
+        // Refresh profile
+        axios.post('http://YOUR IP HERE:3000/UserProfilePage', { email: viewedEmail })
+          .then((result) => {
+            setUser(result.data);
+            setBioInput(result.data.bio || '');        
+            setUsernameInput(result.data.username || ''); 
+          })
+          .catch(err => {
+            console.error("Error reloading user profile:", err);
+          });
+      })
+      .catch(error => {
+        console.error('Error updating profile picture:', error);
+      });
+    }
+  };
+  
+  const handleSavePetName = async () => {
+    try {
+      await axios.post('http://YOUR IP HERE:3000/updatePetName', {
+        email: viewedEmail,
+        petName: user.petName
+      });
+      alert('Pet name updated successfully!');
+  
+      // Refresh the user data after saving
+      axios.post("http://YOUR IP HERE:3000/UserProfilePage", { email: viewedEmail })
+        .then((result) => {
+          setUser(result.data);
+        })
+        .catch(err => {
+          console.error("Error refreshing user after pet name update:", err);
+        });
+  
+    } catch (error) {
+      console.error('Error updating pet name:', error);
+      alert('Failed to update pet name.');
+    }
+  };
+
+  const handleSearch = async () => {
+  if (searchQuery.trim() === '') return;
+
+  setIsSearching(true);
+  try {
+    const response = await axios.post('http://YOUR IP HERE:3000/search', {
+      username: searchQuery,
+      currentUserId: user.uid,
+    });
+
+    setSearchResults(response.data);
+    setIsSearching(false);
+  } catch (error) {
+    console.error('Error searching for users:', error);
+    setIsSearching(false);
+  }
+};
+
+const handleLiveSearch = (query) => {
+  if (debounceTimeout.current) {
+    clearTimeout(debounceTimeout.current);
+  }
+
+  debounceTimeout.current = setTimeout(async () => {
+    if (query.trim() === '') {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await axios.post('http://YOUR IP HERE:3000/search', {
+        username: query,
+        currentUserId: user.uid, 
+      });
+      setSearchResults(response.data);
+    } catch (error) {
+      console.error('Error searching for users:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  }, 300);
+};
+
+const handleFollow = async (targetUserId) => {
+  console.log("Inside handleFollow");
+
+  let storedUid = await AsyncStorage.getItem('userUid');
+
+  if (!storedUid && user?.uid) {
+    storedUid = user.uid;
+    console.log("Fallback to user.uid:", storedUid);
+  }
+
+  console.log("Current user UID:", storedUid);
+  console.log("Target user UID:", targetUserId);
+
+  if (!storedUid || !targetUserId) {
+    console.error('Missing current user UID or targetUserId');
+    return;
+  }
+
+  try {
+    const response = await axios.post('http://YOUR IP HERE:3000/follow', {
+      currentUserId: storedUid,
+      targetUserId,
+    });
+
+    if (response.data.message === "Followed successfully") {
+      console.log("Followed successfully!");
+      setIsFollowingViewedUser(true);
+
+      setSearchResults(prevResults =>
+        prevResults.map(result =>
+          result.uid === targetUserId ? { ...result, isFollowing: true } : result
+        )
+      );
+    } else {
+      console.warn("Unexpected response from server:", response.data);
+    }
+  } catch (error) {
+    console.error("Error sending follow request:", error);
+  }
+
+  // Refresh viewed user
+  axios.post("http://YOUR IP HERE:3000/UserProfilePage", { email: viewedEmail })
+  .then((result) => {
+    setUser(result.data);
+  })
+  .catch(err => {
+    console.error("Error refreshing viewed user after follow:", err);
+  });
+};
+
+const handleUnfollow = async (targetUserId) => {
+  try {
+    const storedUid = await AsyncStorage.getItem('userUid');
+    if (!storedUid || !targetUserId) return;
+
+    const response = await axios.post('http://YOUR IP HERE:3000/unfollow', {
+      currentUserId: storedUid,
+      targetUserId,
+    });
+
+    if (response.data.message === "Unfollowed successfully") {
+      setIsFollowingViewedUser(false);
+
+      setSearchResults(prevResults =>
+        prevResults.map(result =>
+          result.uid === targetUserId ? { ...result, isFollowing: false } : result
+        )
+      );
+    }
+  } catch (error) {
+    console.error("Error unfollowing user:", error);
+  }
+
+  // Refresh viewed user
+  axios.post("http://YOUR IP HERE:3000/UserProfilePage", { email: viewedEmail })
+  .then((result) => {
+    setUser(result.data);
+  })
+  .catch(err => {
+    console.error("Error refreshing viewed user after unfollow:", err);
+  });
+};
   
   if (loading) {
     return <Text>Loading...</Text>;
@@ -558,7 +558,7 @@ const handleUnfollow = async (targetUserId) => {
           <TouchableOpacity
             style={styles.saveButton}
             onPress={() => {
-              axios.post('http://localhost:3000/updateProfile', {
+              axios.post('http://YOUR IP HERE:3000/updateProfile', {
                 email: viewedEmail,
                 username: usernameInput,
                 bio: bioInput
@@ -575,7 +575,7 @@ const handleUnfollow = async (targetUserId) => {
                 setEditProfileModalVisible(false);
               
                 setTimeout(() => {
-                  axios.post("http://localhost:3000/UserProfilePage", { email: viewedEmail })
+                  axios.post("http://YOUR IP HERE:3000/UserProfilePage", { email: viewedEmail })
                     .then((result) => {
                       setUser(result.data);
                       setBioInput(result.data.bio || '');

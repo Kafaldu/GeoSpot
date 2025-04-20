@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@expo/metro-runtime": "~4.0.1",
+    "@mapbox/polyline": "^1.2.1",
     "@react-google-maps/api": "^2.20.6",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-navigation/bottom-tabs": "^7.3.9",
@@ -24,6 +25,7 @@
     "expo-image-picker": "~16.0.6",
     "expo-location": "~18.0.10",
     "expo-media-library": "~17.0.6",
+    "expo-secure-store": "~14.0.1",
     "expo-status-bar": "~2.0.1",
     "jsonwebtoken": "^9.0.2",
     "react": "18.3.1",

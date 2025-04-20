@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from "@react-navigation/native";
 import axios from "axios";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 
 
@@ -15,32 +15,32 @@ const Login = () => {
 
   const handleSubmit = async () => {
     setError("");
-  
+    
+    if (!email || !password) {
+      setError("Please enter both email and password.");
+      return;
+    }
+
     try {
-      const result = await axios.post('http://localhost:3000/login', { email, password });
+      const result = await axios.post('http://YOUR IP HERE:3000/login', { email, password });
   
       if (result.data.message === "Success") {
-        
-        await AsyncStorage.removeItem('user');
-  
-        
-        const loggedInEmail = result.data.user.email;
-        const loggedInUid = result.data.user.uid;
-  
-        await AsyncStorage.setItem('user', JSON.stringify({
-          email: loggedInEmail,
-          uid: loggedInUid,
+        const user = {
+          uid: result.data.user.uid,
+          email: result.data.user.email,
           username: result.data.user.username,
-        }));
+        };
         
-    
-        await AsyncStorage.setItem('userEmail', loggedInEmail);
-        await AsyncStorage.setItem('userUid', loggedInUid);
+        await SecureStore.deleteItemAsync('user');
+        console.log("🧹 Cleared previous user from SecureStore");
+        // ✅ Save user to SecureStore
+        await SecureStore.setItemAsync('user', JSON.stringify(user));
+        console.log("✅ User saved to SecureStore");
   
-     
-        navigation.navigate('HomeTabs', {
+        // ✅ Navigate to HomeTabs > UserProfilePage
+        navigation.replace('HomeTabs', {
           screen: 'UserProfilePage',
-          params: { email: loggedInEmail }
+          params: { email: user.email }
         });
       } else {
         setError(result.data.message || "Invalid credentials. Please try again.");
