@@ -150,24 +150,26 @@ app.post('/createPost', async (req, res) => {
     const newPost = await PostModel.create({
       userId,
       username,
+      userProfilePicture: user.profilePicture,
       imageUrl,
       description,
       location,
-      userProfilePicture: user.profilePicture,
-      date: new Date(),
     });
 
-    // Add photo to user's profile
-    user.photos.push(imageUrl);
-    user.numPosts = (user.numPosts || 0) + 1;
+    // Increment values
+    user.spotsVisited += 1;
+    user.numPosts += 1;
+    user.streak += 1; // Increment streak too
+
     await user.save();
 
-    res.json({ message: "Post created and added to profile", post: newPost });
+    res.json(newPost);
   } catch (err) {
     console.error('Error creating post:', err);
     res.status(500).json({ message: "Server error", error: err });
   }
 });
+
 
 
 

@@ -96,16 +96,16 @@ const UserProfilePage = () => {
         setBioInput(viewedUserData.bio || '');
         setUsernameInput(viewedUserData.username || '');
     
-        const generatedPhotos = Array.from({ length: 6 }, (_, i) => ({
-          url: `https://picsum.photos/id/${237 + i}/300/300`,
-          postedBy: viewedUserData.username,
-          date: new Date().toLocaleDateString('en-US'),
-        }));
-        setPhotoUrls(user.photos.map(url => ({
-          url,
-          postedBy: user.username,
-          date: new Date().toLocaleDateString('en-US'),
-        })));        
+        if (Array.isArray(viewedUserData.photos)) {
+          setPhotoUrls(viewedUserData.photos.map(url => ({
+            url,
+            postedBy: viewedUserData.username,
+            date: new Date().toLocaleDateString('en-US'),
+          })));
+        } else {
+          setPhotoUrls([]); // fallback if no photos
+        }
+              
       } catch (err) {
         console.error("Error loading profile:", err);
         setError("Failed to load user data.");
@@ -327,7 +327,8 @@ const handleUnfollow = async (targetUserId) => {
     <ScrollView style={styles.container}>
       
 {/* Add Friends or Back Arrow depending on profile */}
-<View style={{ flexDirection: 'row', justifyContent: 'flex-start', marginBottom: 10 }}>
+<View style={{ flexDirection: 'row', justifyContent: 'flex-start', marginTop: 20, marginBottom: 10 }}>
+
   {!isOwnProfile ? (
     <TouchableOpacity onPress={() => {
       AsyncStorage.getItem('userEmail').then(myEmail => {
