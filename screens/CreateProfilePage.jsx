@@ -18,15 +18,51 @@ const CreateProfilePage = () => {
   };
 
   const handleSubmit = () => {
-    if (!profile.firstName || !profile.lastName || !profile.birthday) {
+    const { firstName, lastName, birthday } = profile;
+  
+    if (!firstName || !lastName || !birthday) {
       setError("Please fill all fields.");
       return;
     }
+  
+    
+    const birthdayDigitsOnly = birthday.replace(/\D/g, "");
+  
+    if (birthdayDigitsOnly.length !== 8) {
+      setError("Birthday must be in MMDDYYYY format.");
+      return;
+    }
+  
+    const month = parseInt(birthdayDigitsOnly.substring(0, 2));
+    const day = parseInt(birthdayDigitsOnly.substring(2, 4));
+    const year = parseInt(birthdayDigitsOnly.substring(4, 8));
+  
+    const parsedDate = new Date(year, month - 1, day);
 
-    // Handle form submission 
+    const today = new Date();
+  
+    if (
+      isNaN(parsedDate.getTime()) ||
+      parsedDate.getMonth() + 1 !== month || 
+      parsedDate.getDate() !== day ||
+      parsedDate.getFullYear() !== year
+    ) {
+      setError("Invalid birthday date.");
+      return;
+    }
+  
+    if (parsedDate > today) {
+      setError("Birthday cannot be in the future.");
+      return;
+    }
+  
+    setError("");
+  
     console.log("Profile created:", profile);
-    navigation.navigate("ChoosePetPage", { email: email }); 
+    navigation.navigate("ChoosePetPage", { email: email });
   };
+  
+  
 
   return (
     <View style={styles.container}>

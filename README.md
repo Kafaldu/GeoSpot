@@ -6,6 +6,7 @@
 ## Backend Setup (Render)
 
 We’re hosting the backend on **Render**, so you don’t need to run it locally.
+NOTE that the server goes to sleep when there is no activity so initial log in may take slightly longer. Please be patient.
 
 ### Steps:
 
