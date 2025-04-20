@@ -35,6 +35,11 @@ const UserSchema = new mongoose.Schema({
             email: String,
         }
     ],
+    photos: {
+        type: [String],
+        default: [],
+      },
+      
 });
 
 module.exports = mongoose.model("User", UserSchema);

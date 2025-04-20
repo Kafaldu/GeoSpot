@@ -142,7 +142,7 @@ app.post('/createPost', async (req, res) => {
   const { userId, username, imageUrl, description, location } = req.body;
 
   try {
-    const user = await UserModel.findOne({ uid: userId }); 
+    const user = await UserModel.findOne({ uid: userId });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -150,18 +150,25 @@ app.post('/createPost', async (req, res) => {
     const newPost = await PostModel.create({
       userId,
       username,
-      userProfilePicture: user.profilePicture, 
       imageUrl,
       description,
       location,
+      userProfilePicture: user.profilePicture,
+      date: new Date(),
     });
 
-    res.json(newPost);
+    // Add photo to user's profile
+    user.photos.push(imageUrl);
+    user.numPosts = (user.numPosts || 0) + 1;
+    await user.save();
+
+    res.json({ message: "Post created and added to profile", post: newPost });
   } catch (err) {
     console.error('Error creating post:', err);
     res.status(500).json({ message: "Server error", error: err });
   }
 });
+
 
 
 app.get('/friendsFeed/:userId', async (req, res) => {

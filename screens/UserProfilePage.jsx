@@ -101,7 +101,11 @@ const UserProfilePage = () => {
           postedBy: viewedUserData.username,
           date: new Date().toLocaleDateString('en-US'),
         }));
-        setPhotoUrls(generatedPhotos);
+        setPhotoUrls(user.photos.map(url => ({
+          url,
+          postedBy: user.username,
+          date: new Date().toLocaleDateString('en-US'),
+        })));        
       } catch (err) {
         console.error("Error loading profile:", err);
         setError("Failed to load user data.");
