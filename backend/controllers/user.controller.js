@@ -1,6 +1,6 @@
-import UserModel from '../models/user.model.js';
+const UserModel = require('../models/user.model');
 
-export const getUserProfile = async (req, res) => {
+const getUserProfile = async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -8,7 +8,6 @@ export const getUserProfile = async (req, res) => {
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    
     const populatedFollowers = await Promise.all(
       (user.followers || []).map(async (follower) => {
         if (follower.username) return follower;
@@ -46,3 +45,4 @@ export const getUserProfile = async (req, res) => {
   }
 };
 
+module.exports = { getUserProfile };

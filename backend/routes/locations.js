@@ -1,5 +1,5 @@
-import express from 'express';
-import LocationModel from '../models/Location.js';
+const express = require('express');
+const LocationModel = require('../models/Location');
 
 const router = express.Router();
 
@@ -13,4 +13,4 @@ router.get('/', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const postSchema = new mongoose.Schema({
   userId: { type: String, required: true }, 
@@ -10,6 +10,4 @@ const postSchema = new mongoose.Schema({
   userProfilePicture: { type: String },
 });
 
-const PostModel = mongoose.model('Post', postSchema);
-
-export default PostModel;
+module.exports = mongoose.model('Post', postSchema);

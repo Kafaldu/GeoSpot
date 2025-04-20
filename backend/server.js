@@ -1,17 +1,16 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import cors from 'cors';
-import UserModel from './models/user.model.js';
-import PostModel from './models/post.model.js';
-import dotenv from 'dotenv';
-dotenv.config();
-import { v4 as uuidv4 } from 'uuid';
-import cloudinary from './cloudinary.js';
-import feedRoutes from './routes/feed.routes.js';
-import userRoutes from './routes/user.routes.js';
-import { getUserProfile } from './controllers/user.controller.js';
-import jwt from 'jsonwebtoken';
-import locationsRouter from './routes/locations.js';
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const UserModel = require('./models/user.model');
+const PostModel = require('./models/post.model');
+require('dotenv').config();
+const { v4: uuidv4 } = require('uuid');
+const cloudinary = require('./cloudinary');
+const feedRoutes = require('./routes/feed.routes');
+const userRoutes = require('./routes/user.routes');
+const { getUserProfile } = require('./controllers/user.controller');
+const jwt = require('jsonwebtoken');
+const locationsRouter = require('./routes/locations');
 
 const app = express();
 

@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const locationSchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true },                
@@ -8,10 +8,8 @@ const locationSchema = new mongoose.Schema({
     lng: { type: Number, required: true },
   },
   imagePrompt: { type: String },                         
-  isActive: { type: Boolean, default: false },           
+  isActive: { type: Boolean, default: false },          
   createdAt: { type: Date, default: Date.now },
 });
 
-const LocationModel = mongoose.model('Location', locationSchema);
-
-export default LocationModel;
+module.exports = mongoose.model('Location', locationSchema);

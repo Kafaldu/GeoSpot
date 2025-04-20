@@ -1,14 +1,6 @@
-
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-import LocationModel from './models/Location.js'; 
-
-dotenv.config();
-
-await mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+const mongoose = require('mongoose');
+require('dotenv').config();
+const LocationModel = require('./models/Location');
 
 const locations = [
   {
@@ -34,12 +26,21 @@ const locations = [
   },
 ];
 
-try {
-  await LocationModel.deleteMany(); // optional: clears previous data
-  await LocationModel.insertMany(locations);
-  console.log('✅ Seeded locations successfully');
-} catch (err) {
-  console.error('❌ Failed to seed locations:', err);
-} finally {
-  await mongoose.disconnect();
+async function seed() {
+  try {
+    await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+
+    await LocationModel.deleteMany(); // optional: clears previous data
+    await LocationModel.insertMany(locations);
+    console.log('✅ Seeded locations successfully');
+  } catch (err) {
+    console.error('❌ Failed to seed locations:', err);
+  } finally {
+    await mongoose.disconnect();
+  }
 }
+
+seed();
