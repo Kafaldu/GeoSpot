@@ -586,6 +586,10 @@ import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
 import polyline from '@mapbox/polyline';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+
+
+
 
 const MapScreen = () => {
   const [location, setLocation] = useState(null);
@@ -693,7 +697,7 @@ const MapScreen = () => {
         //const uploadedUrl = await uploadToCloudinary(base64Image);
         console.log("📤 Base64 being sent:", base64Image.slice(0, 100));
 
-        const uploadResponse = await fetch('https://geospotbackend.onrender.com:3000/uploadPhoto', {
+        const uploadResponse = await fetch('https://geospotbackend.onrender.com/uploadPhoto', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ image: base64Image }),
@@ -709,10 +713,16 @@ const MapScreen = () => {
         }
   
         // ✅ Create the post after upload
-        const userData = await AsyncStorage.getItem('user');
-        const parsedUser = JSON.parse(userData);
+        const userData = await SecureStore.getItemAsync('user');
+        const parsedUser = userData ? JSON.parse(userData) : null;
+        
+        if (!parsedUser || !parsedUser.uid) {
+          console.error("❌ User data missing or invalid");
+          Alert.alert("Error", "Could not find your account info.");
+          return;
+        }
 
-        const postResponse = await fetch('https://geospotbackend.onrender.com:3000/createPost', {
+        const postResponse = await fetch('https://geospotbackend.onrender.com/createPost', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -785,7 +795,7 @@ const MapScreen = () => {
 
   const uploadToCloudinary = async (base64Image) => {
     try {
-      const response = await fetch('https://geospotbackend.onrender.com:3000/uploadPhoto', {
+      const response = await fetch('https://geospotbackend.onrender.com/uploadPhoto', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: base64Image }),
@@ -801,7 +811,7 @@ const MapScreen = () => {
   
   const createPost = async ({ userId, username, imageUrl, location, description }) => {
     try {
-      const response = await fetch('https://geospotbackend.onrender.com:3000/createPost', {
+      const response = await fetch('https://geospotbackend.onrender.com/createPost', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

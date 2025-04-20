@@ -3,6 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-nativ
 import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from "@react-navigation/native";
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const SignUp = () => {
   const [username, setUsername] = useState("");
@@ -14,7 +16,7 @@ const SignUp = () => {
   const handleSubmit = () => {
     setError(""); 
   
-    axios.post('https://geospotbackend.onrender.com:3000/signup', { username, email, password })
+    axios.post('https://geospotbackend.onrender.com/signup', { username, email, password })
       .then(result => {
         console.log(result);
         navigation.navigate('CreateProfile', { email: email }); 

@@ -4,6 +4,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from "@react-navigation/native";
 import axios from "axios";
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 
@@ -22,7 +23,7 @@ const Login = () => {
     }
 
     try {
-      const result = await axios.post('https://geospotbackend.onrender.com:3000/login', { email, password });
+      const result = await axios.post('https://geospotbackend.onrender.com/login', { email, password });
   
       if (result.data.message === "Success") {
         const user = {

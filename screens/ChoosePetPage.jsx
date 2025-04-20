@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Alert, Image, FlatList } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native"; 
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 
@@ -46,7 +47,7 @@ const ChoosePetPage = () => {
   
         console.log("Chosen pet URL:", chosenPetImageURL);
   
-        await axios.post('https://geospotbackend.onrender.com:3000/savePet', {
+        await axios.post('https://geospotbackend.onrender.com/savePet', {
           email: email,
           selectedPet: chosenPetImageURL,   
           petLevel: 1,

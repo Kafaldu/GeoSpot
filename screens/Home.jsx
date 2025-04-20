@@ -217,6 +217,8 @@ export default Home;*/
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, Alert, FlatList, StyleSheet } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const Home = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState('friends');
@@ -250,9 +252,9 @@ const Home = ({ navigation }) => {
         let endpoint = '';
 
         if (activeTab === 'friends') {
-          endpoint = `https://geospotbackend.onrender.com:3000/friendsFeed/${userInfo.uid}`;
+          endpoint = `https://geospotbackend.onrender.com/friendsFeed/${userInfo.uid}`;
         } else {
-          endpoint = `https://geospotbackend.onrender.com:3000/localFeed/${userInfo.location || 'Gainesville'}`;
+          endpoint = `https://geospotbackend.onrender.com/localFeed/${userInfo.location || 'Gainesville'}`;
         }
 
         const response = await fetch(endpoint, {
@@ -285,14 +287,14 @@ const Home = ({ navigation }) => {
         return;
       }
 
-      const response = await fetch(`https://geospotbackend.onrender.com:3000/user/${user.email}`);
+      const response = await fetch(`https://geospotbackend.onrender.com/user/${user.email}`);
       const dbUser = await response.json();
       if (!dbUser || !dbUser.uid) {
         console.error('DB user not found');
         return;
       }
 
-      await fetch('https://geospotbackend.onrender.com:3000/createPost', {
+      await fetch('https://geospotbackend.onrender.com/createPost', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
