@@ -5,7 +5,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 const ProfileCreationCompletePage = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { email } = route.params; // Get the email from the route params
+  const { email } = route.params; 
 
   const handleContinue = () => {
     navigation.reset({

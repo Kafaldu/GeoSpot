@@ -33,12 +33,10 @@ const Login = () => {
         };
         
         await SecureStore.deleteItemAsync('user');
-        console.log("🧹 Cleared previous user from SecureStore");
-        // ✅ Save user to SecureStore
+        console.log(" Cleared previous user from SecureStore");
         await SecureStore.setItemAsync('user', JSON.stringify(user));
-        console.log("✅ User saved to SecureStore");
+        console.log(" User saved to SecureStore");
   
-        // ✅ Navigate to HomeTabs > UserProfilePage
         navigation.replace('HomeTabs', {
           screen: 'UserProfilePage',
           params: { email: user.email }

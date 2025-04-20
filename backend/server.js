@@ -411,7 +411,7 @@ app.post('/uploadPhoto', async (req, res) => {
     });
 
     res.json({ imageUrl: uploadResponse.secure_url });
-    console.log("✅ Uploaded image URL:", uploadResponse.secure_url);
+    console.log("Uploaded image URL:", uploadResponse.secure_url);
   } catch (err) {
     console.error('Error uploading photo:', err);
     res.status(500).json({ message: "Server error", error: err });
@@ -475,5 +475,5 @@ app.get('/userPosts/:uid', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
+  console.log(` Server running on port ${PORT}`);
 });

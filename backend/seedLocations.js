@@ -33,11 +33,11 @@ async function seed() {
       useUnifiedTopology: true,
     });
 
-    await LocationModel.deleteMany(); // optional: clears previous data
+    await LocationModel.deleteMany(); 
     await LocationModel.insertMany(locations);
-    console.log('✅ Seeded locations successfully');
+    console.log(' Seeded locations successfully');
   } catch (err) {
-    console.error('❌ Failed to seed locations:', err);
+    console.error(' Failed to seed locations:', err);
   } finally {
     await mongoose.disconnect();
   }

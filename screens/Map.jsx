@@ -9,7 +9,7 @@ import * as SecureStore from 'expo-secure-store';
 
 function getDistanceInMiles(lat1, lon1, lat2, lon2) {
   const toRad = (value) => (value * Math.PI) / 180;
-  const R = 6371; // Radius of Earth in kilometers
+  const R = 6371; 
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
   const a =
@@ -87,7 +87,7 @@ const MapScreen = () => {
     if (isRevealed && location && destination) {
       fetchRoute();
     }
-  }, [isRevealed, location, destination]); // Remove isRevealed from dependency list
+  }, [isRevealed, location, destination]); 
   
   useEffect(() => {
     if (!isRevealed) {
@@ -106,7 +106,7 @@ const MapScreen = () => {
       })();
   
       if (now >= revealTime) {
-        if (!isRevealed) setIsRevealed(true); // optional redundancy protection
+        if (!isRevealed) setIsRevealed(true); 
         setTimeUntilReveal("📍 Today’s spot is revealed!");
       } else {
         const diff = revealTime - now;
@@ -235,22 +235,33 @@ const MapScreen = () => {
     }
   
     try {
-      // Get latest user location
       const loc = await Location.getCurrentPositionAsync({});
-      setLocation(loc.coords); // 👈 update to actual user location
+      setLocation(loc.coords);
   
       const next = availableLocations[Math.floor(Math.random() * availableLocations.length)];
       console.log('📍 Switching to location:', next);
   
       if (next?.coordinates?.lat && next?.coordinates?.lng) {
-        setDestination({
+        const newDestination = {
           latitude: next.coordinates.lat,
           longitude: next.coordinates.lng,
-        });
+        };
+  
+        setDestination(newDestination);
         setIsRevealed(false);
         setRouteCoords([]);
         setHintText(next.description || 'No hint found for this location');
         setCustomRevealTime(new Date(Date.now() + 5000)); // auto-reveal in 5 sec
+  
+        // ✅ Update distance manually
+        const miles = getDistanceInMiles(
+          loc.coords.latitude,
+          loc.coords.longitude,
+          next.coordinates.lat,
+          next.coordinates.lng
+        );
+        setDistanceToDestination(miles);
+  
         Alert.alert("🔁 New destination set!", next.name);
       } else {
         console.warn('⚠️ Chosen location has invalid coordinates:', next);
@@ -262,16 +273,17 @@ const MapScreen = () => {
   };
   
   
+  
 
   const revealDestinationNow = () => {
-    setIsRevealed(false); // 👈 Hide destination & path during countdown
+    setIsRevealed(false); 
     const in10Seconds = new Date(Date.now() + 10000);
     setCustomRevealTime(in10Seconds);
   
     setTimeout(async () => {
       setIsRevealed(true);
   
-      // ⏳ Wait until location is defined (max 5 tries)
+      // Wait until location is defined 
       for (let i = 0; i < 5; i++) {
         if (location && location.latitude && location.longitude) {
           await fetchRoute();
@@ -312,9 +324,11 @@ const MapScreen = () => {
 
       <View style={styles.overlay}>
         <Text style={styles.revealLabel}>{timeUntilReveal}</Text>
-        <Text style={styles.distanceLabel}>
-    📍 {distanceToDestination} miles away
-  </Text>
+        {isRevealed && (
+          <Text style={styles.distanceLabel}>
+          📍 {distanceToDestination} miles away
+          </Text>
+        )}
       </View>
 
       
@@ -417,7 +431,7 @@ const styles = StyleSheet.create({
   },  
   testButtonsContainer: {
     position: 'absolute',
-    bottom: 20, // ⬇️ was 160, lowered for more spacing
+    bottom: 20, 
     width: '100%',
     alignItems: 'center',
     gap: 10,

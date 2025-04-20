@@ -41,7 +41,7 @@ const UserProfilePage = () => {
 
   useEffect(() => {
     if (isFocused && viewedEmail) {
-      fetchUserData(); // this must be moved outside the original useEffect
+      fetchUserData(); 
     }
   }, [isFocused, viewedEmail]);
 
@@ -91,7 +91,7 @@ const UserProfilePage = () => {
   
       setIsFollowingViewedUser(isFollowing);
   
-      //Set viewed user's data (not current user)
+      //Set viewed user's data 
       const cleanedFollowing = (viewedUserData.following || []).map(f =>
         typeof f === 'string' ? { uid: f } : f
       );
@@ -247,31 +247,29 @@ const handleLiveSearch = (query) => {
 };
 
 const handleFollow = async (targetUserId) => {
-  console.log("Inside handleFollow");
-
-  let storedUid = await AsyncStorage.getItem('userUid');
-
-  if (!storedUid && user?.uid) {
-    storedUid = user.uid;
-    console.log("Fallback to user.uid:", storedUid);
-  }
-
-  console.log("Current user UID:", storedUid);
-  console.log("Target user UID:", targetUserId);
-
-  if (!storedUid || !targetUserId) {
-    console.error('Missing current user UID or targetUserId');
-    return;
-  }
-
   try {
+    const rawUser = await SecureStore.getItemAsync('user');
+    if (!rawUser) {
+      console.warn("No user found in SecureStore.");
+      return;
+    }
+
+    const parsedUser = JSON.parse(rawUser);
+    const currentUserId = parsedUser.uid;
+
+    if (!currentUserId || !targetUserId) {
+      console.error('Missing currentUserId or targetUserId');
+      return;
+    }
+
     const response = await axios.post('https://geospotbackend.onrender.com/follow', {
-      currentUserId: storedUid,
+      currentUserId,
       targetUserId,
     });
 
     if (response.data.message === "Followed successfully") {
       console.log("Followed successfully!");
+
       setIsFollowingViewedUser(true);
 
       setSearchResults(prevResults =>
@@ -279,30 +277,35 @@ const handleFollow = async (targetUserId) => {
           result.uid === targetUserId ? { ...result, isFollowing: true } : result
         )
       );
+
+      // Refresh viewed user's info
+      const updatedViewedUser = await axios.post("https://geospotbackend.onrender.com/UserProfilePage", {
+        email: viewedEmail,
+      });
+
+      setUser(updatedViewedUser.data);
     } else {
       console.warn("Unexpected response from server:", response.data);
     }
   } catch (error) {
     console.error("Error sending follow request:", error);
   }
-
-  // Refresh viewed user
-  axios.post("https://geospotbackend.onrender.com/UserProfilePage", { email: viewedEmail })
-  .then((result) => {
-    setUser(result.data);
-  })
-  .catch(err => {
-    console.error("Error refreshing viewed user after follow:", err);
-  });
 };
+
 
 const handleUnfollow = async (targetUserId) => {
   try {
-    const storedUid = await AsyncStorage.getItem('userUid');
-    if (!storedUid || !targetUserId) return;
+    const rawUser = await SecureStore.getItemAsync('user');
+    if (!rawUser) {
+      console.warn("No user found in SecureStore.");
+      return;
+    }
+
+    const parsedUser = JSON.parse(rawUser);
+    const currentUserId = parsedUser.uid;
 
     const response = await axios.post('https://geospotbackend.onrender.com/unfollow', {
-      currentUserId: storedUid,
+      currentUserId,
       targetUserId,
     });
 
@@ -314,20 +317,19 @@ const handleUnfollow = async (targetUserId) => {
           result.uid === targetUserId ? { ...result, isFollowing: false } : result
         )
       );
+
+      // Refresh viewed user
+      const updatedViewedUser = await axios.post("https://geospotbackend.onrender.com/UserProfilePage", {
+        email: viewedEmail,
+      });
+
+      setUser(updatedViewedUser.data);
     }
   } catch (error) {
     console.error("Error unfollowing user:", error);
   }
-
-  // Refresh viewed user
-  axios.post("https://geospotbackend.onrender.com/UserProfilePage", { email: viewedEmail })
-  .then((result) => {
-    setUser(result.data);
-  })
-  .catch(err => {
-    console.error("Error refreshing viewed user after unfollow:", err);
-  });
 };
+
   
   if (loading) {
     return <Text>Loading...</Text>;
@@ -792,7 +794,7 @@ const handleUnfollow = async (targetUserId) => {
             >
               <TouchableOpacity
                 onPress={() => {
-                  setAddFriendsModalVisible(false); // 👈 close modal
+                  setAddFriendsModalVisible(false); 
                   navigation.navigate("UserProfilePage", {
                     email: resultUser.email,
                     uid: resultUser.uid
@@ -1044,14 +1046,15 @@ const styles = StyleSheet.create({
   photosContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'flex-start',
-    padding: 0,
-    margin: -1, // removes spacing gap
-  },  
+    justifyContent: 'center', 
+    paddingHorizontal: 0,
+    marginHorizontal: 'auto', 
+    gap: 5,
+  },
   photo: {
     width: 100,
     height: 100,
-    marginBottom: 5,
+    margin: 5, 
     borderWidth: 0.5,
     borderColor: "#2d3748",
   },
