@@ -250,9 +250,9 @@ const Home = ({ navigation }) => {
         let endpoint = '';
 
         if (activeTab === 'friends') {
-          endpoint = `http://YOUR IP HERE:3000/friendsFeed/${userInfo.uid}`;
+          endpoint = `https://geospotbackend.onrender.com:3000/friendsFeed/${userInfo.uid}`;
         } else {
-          endpoint = `http://YOUR IP HERE:3000/localFeed/${userInfo.location || 'Gainesville'}`;
+          endpoint = `https://geospotbackend.onrender.com:3000/localFeed/${userInfo.location || 'Gainesville'}`;
         }
 
         const response = await fetch(endpoint, {
@@ -285,14 +285,14 @@ const Home = ({ navigation }) => {
         return;
       }
 
-      const response = await fetch(`http://YOUR IP HERE:3000/user/${user.email}`);
+      const response = await fetch(`https://geospotbackend.onrender.com:3000/user/${user.email}`);
       const dbUser = await response.json();
       if (!dbUser || !dbUser.uid) {
         console.error('DB user not found');
         return;
       }
 
-      await fetch('http://YOUR IP HERE:3000/createPost', {
+      await fetch('https://geospotbackend.onrender.com:3000/createPost', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

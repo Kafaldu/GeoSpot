@@ -46,7 +46,7 @@ const ChoosePetPage = () => {
   
         console.log("Chosen pet URL:", chosenPetImageURL);
   
-        await axios.post('http://YOUR IP HERE:3000/savePet', {
+        await axios.post('https://geospotbackend.onrender.com:3000/savePet', {
           email: email,
           selectedPet: chosenPetImageURL,   
           petLevel: 1,

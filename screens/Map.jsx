@@ -693,7 +693,7 @@ const MapScreen = () => {
         //const uploadedUrl = await uploadToCloudinary(base64Image);
         console.log("📤 Base64 being sent:", base64Image.slice(0, 100));
 
-        const uploadResponse = await fetch('http://YOUR IP HERE:3000/uploadPhoto', {
+        const uploadResponse = await fetch('https://geospotbackend.onrender.com:3000/uploadPhoto', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ image: base64Image }),
@@ -712,7 +712,7 @@ const MapScreen = () => {
         const userData = await AsyncStorage.getItem('user');
         const parsedUser = JSON.parse(userData);
 
-        const postResponse = await fetch('http://YOUR IP HERE:3000/createPost', {
+        const postResponse = await fetch('https://geospotbackend.onrender.com:3000/createPost', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -785,7 +785,7 @@ const MapScreen = () => {
 
   const uploadToCloudinary = async (base64Image) => {
     try {
-      const response = await fetch('http://YOUR IP HERE:3000/uploadPhoto', {
+      const response = await fetch('https://geospotbackend.onrender.com:3000/uploadPhoto', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: base64Image }),
@@ -801,7 +801,7 @@ const MapScreen = () => {
   
   const createPost = async ({ userId, username, imageUrl, location, description }) => {
     try {
-      const response = await fetch('http://YOUR IP HERE:3000/createPost', {
+      const response = await fetch('https://geospotbackend.onrender.com:3000/createPost', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -57,13 +57,13 @@ const UserProfilePage = () => {
         setIsOwnProfile(currentUserEmail === viewedEmail);
     
         // Fetch viewed user
-        const viewedUserResponse = await axios.post("http://YOUR IP HERE:3000/UserProfilePage", {
+        const viewedUserResponse = await axios.post("https://geospotbackend.onrender.com:3000/UserProfilePage", {
           email: viewedEmail,
         });
         const viewedUserData = viewedUserResponse.data;
     
         // Fetch current user 
-        const currentUserResponse = await axios.post("http://YOUR IP HERE:3000/UserProfilePage", {
+        const currentUserResponse = await axios.post("https://geospotbackend.onrender.com:3000/UserProfilePage", {
           email: currentUserEmail,
         });
         const currentUserData = currentUserResponse.data;
@@ -137,14 +137,14 @@ const UserProfilePage = () => {
       }
   
       // Upload
-      axios.post('http://YOUR IP HERE:3000/updateProfilePicture', {
+      axios.post('https://geospotbackend.onrender.com:3000/updateProfilePicture', {
         email: viewedEmail,
         image: base64Img,
       })
       .then(response => {
         console.log('Profile picture updated successfully');
         // Refresh profile
-        axios.post('http://YOUR IP HERE:3000/UserProfilePage', { email: viewedEmail })
+        axios.post('https://geospotbackend.onrender.com:3000/UserProfilePage', { email: viewedEmail })
           .then((result) => {
             setUser(result.data);
             setBioInput(result.data.bio || '');        
@@ -162,14 +162,14 @@ const UserProfilePage = () => {
   
   const handleSavePetName = async () => {
     try {
-      await axios.post('http://YOUR IP HERE:3000/updatePetName', {
+      await axios.post('https://geospotbackend.onrender.com:3000/updatePetName', {
         email: viewedEmail,
         petName: user.petName
       });
       alert('Pet name updated successfully!');
   
       // Refresh the user data after saving
-      axios.post("http://YOUR IP HERE:3000/UserProfilePage", { email: viewedEmail })
+      axios.post("https://geospotbackend.onrender.com:3000/UserProfilePage", { email: viewedEmail })
         .then((result) => {
           setUser(result.data);
         })
@@ -188,7 +188,7 @@ const UserProfilePage = () => {
 
   setIsSearching(true);
   try {
-    const response = await axios.post('http://YOUR IP HERE:3000/search', {
+    const response = await axios.post('https://geospotbackend.onrender.com:3000/search', {
       username: searchQuery,
       currentUserId: user.uid,
     });
@@ -214,7 +214,7 @@ const handleLiveSearch = (query) => {
 
     setIsSearching(true);
     try {
-      const response = await axios.post('http://YOUR IP HERE:3000/search', {
+      const response = await axios.post('https://geospotbackend.onrender.com:3000/search', {
         username: query,
         currentUserId: user.uid, 
       });
@@ -246,7 +246,7 @@ const handleFollow = async (targetUserId) => {
   }
 
   try {
-    const response = await axios.post('http://YOUR IP HERE:3000/follow', {
+    const response = await axios.post('https://geospotbackend.onrender.com:3000/follow', {
       currentUserId: storedUid,
       targetUserId,
     });
@@ -268,7 +268,7 @@ const handleFollow = async (targetUserId) => {
   }
 
   // Refresh viewed user
-  axios.post("http://YOUR IP HERE:3000/UserProfilePage", { email: viewedEmail })
+  axios.post("https://geospotbackend.onrender.com:3000/UserProfilePage", { email: viewedEmail })
   .then((result) => {
     setUser(result.data);
   })
@@ -282,7 +282,7 @@ const handleUnfollow = async (targetUserId) => {
     const storedUid = await AsyncStorage.getItem('userUid');
     if (!storedUid || !targetUserId) return;
 
-    const response = await axios.post('http://YOUR IP HERE:3000/unfollow', {
+    const response = await axios.post('https://geospotbackend.onrender.com:3000/unfollow', {
       currentUserId: storedUid,
       targetUserId,
     });
@@ -301,7 +301,7 @@ const handleUnfollow = async (targetUserId) => {
   }
 
   // Refresh viewed user
-  axios.post("http://YOUR IP HERE:3000/UserProfilePage", { email: viewedEmail })
+  axios.post("https://geospotbackend.onrender.com:3000/UserProfilePage", { email: viewedEmail })
   .then((result) => {
     setUser(result.data);
   })
@@ -558,7 +558,7 @@ const handleUnfollow = async (targetUserId) => {
           <TouchableOpacity
             style={styles.saveButton}
             onPress={() => {
-              axios.post('http://YOUR IP HERE:3000/updateProfile', {
+              axios.post('https://geospotbackend.onrender.com:3000/updateProfile', {
                 email: viewedEmail,
                 username: usernameInput,
                 bio: bioInput
@@ -575,7 +575,7 @@ const handleUnfollow = async (targetUserId) => {
                 setEditProfileModalVisible(false);
               
                 setTimeout(() => {
-                  axios.post("http://YOUR IP HERE:3000/UserProfilePage", { email: viewedEmail })
+                  axios.post("https://geospotbackend.onrender.com:3000/UserProfilePage", { email: viewedEmail })
                     .then((result) => {
                       setUser(result.data);
                       setBioInput(result.data.bio || '');

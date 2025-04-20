@@ -22,7 +22,7 @@ const Login = () => {
     }
 
     try {
-      const result = await axios.post('http://YOUR IP HERE:3000/login', { email, password });
+      const result = await axios.post('https://geospotbackend.onrender.com:3000/login', { email, password });
   
       if (result.data.message === "Success") {
         const user = {
