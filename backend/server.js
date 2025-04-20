@@ -35,10 +35,15 @@ mongoose.connect(process.env.MONGO_URI)
   app.post('/signup', async (req, res) => {
     try {
       const { username, email, password } = req.body;
-      const existingUser = await UserModel.findOne({ email });
   
-      if (existingUser) {
+      const existingEmail = await UserModel.findOne({ email });
+      if (existingEmail) {
         return res.status(400).json({ message: "Email already registered" });
+      }
+  
+      const existingUsername = await UserModel.findOne({ username });
+      if (existingUsername) {
+        return res.status(400).json({ message: "Username already taken" });
       }
   
       const newUser = await UserModel.create({ 
@@ -62,6 +67,7 @@ mongoose.connect(process.env.MONGO_URI)
       res.status(500).json({ message: "Server error", error: err });
     }
   });
+  
 
   app.post('/savePet', async (req, res) => {
     const { email, selectedPet } = req.body;

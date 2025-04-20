@@ -14,22 +14,42 @@ const SignUp = () => {
   const [error, setError] = useState("");
 
   const handleSubmit = () => {
-    setError(""); 
+    setError("");
   
+    // Basic email and password validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  
+    if (!username.trim()) {
+      setError("Username is required.");
+      return;
+    }
+  
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+  
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return;
+    }
+  
+    // If all validations pass, proceed with API call
     axios.post('https://geospotbackend.onrender.com/signup', { username, email, password })
       .then(result => {
         console.log(result);
-        navigation.navigate('CreateProfile', { email: email }); 
+        navigation.navigate('CreateProfile', { email: email });
       })
       .catch(err => {
         console.error(err);
-        if (err.response && err.response.data && err.response.data.message) {
-          setError(err.response.data.message); 
+        if (err.response?.data?.message) {
+          setError(err.response.data.message);
         } else {
           setError("An error occurred. Please try again.");
         }
       });
   };
+  
   
 
   return (

@@ -330,6 +330,16 @@ const handleUnfollow = async (targetUserId) => {
   }
 };
 
+const handleLogout = async () => {
+  try {
+    await SecureStore.deleteItemAsync('user');
+    await AsyncStorage.removeItem('userUid');
+    navigation.replace('Login');
+  } catch (error) {
+    console.error("Error during logout:", error);
+  }
+};
+
   
   if (loading) {
     return <Text>Loading...</Text>;
@@ -658,6 +668,13 @@ const handleUnfollow = async (targetUserId) => {
 
       <TouchableOpacity style={[styles.saveButton, { backgroundColor: "#4a5568", marginTop: 10 }]} onPress={() => alert('Privacy setting clicked!')}>
         <Text style={{ color: "white" }}>Privacy</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity 
+        onPress={handleLogout}
+        style={[styles.saveButton, { backgroundColor: "#e53e3e", marginTop: 20 }]}
+      >
+        <Text style={{ color: "white", fontWeight: "bold" }}>Logout</Text>
       </TouchableOpacity>
 
       {/* Close Settings Button */}
