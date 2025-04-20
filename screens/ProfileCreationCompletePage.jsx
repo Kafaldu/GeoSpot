@@ -8,11 +8,10 @@ const ProfileCreationCompletePage = () => {
   const { email } = route.params; // Get the email from the route params
 
   const handleContinue = () => {
-    Alert.alert("Profile Created", "You're all set! Continue to the User Profile page.");
-    navigation.replace('HomeTabs', {
-      screen: 'UserProfilePage',
-      params: { email },  // make sure `email` is available in this scope
-    });    
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    }); 
   };
 
   return (

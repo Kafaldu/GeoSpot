@@ -6,6 +6,7 @@ import axios from "axios";
 import * as ImagePicker from 'expo-image-picker';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useIsFocused } from '@react-navigation/native';
 
 
 const UserProfilePage = () => {
@@ -36,87 +37,99 @@ const UserProfilePage = () => {
   const route = useRoute();
   const viewedEmail = route.params?.email;
 
+  const isFocused = useIsFocused();
+
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (!viewedEmail) {
-        setError("No email provided.");
-        setLoading(false);
+    if (isFocused && viewedEmail) {
+      fetchUserData(); // this must be moved outside the original useEffect
+    }
+  }, [isFocused, viewedEmail]);
+
+  const fetchUserData = async () => {
+    if (!viewedEmail) {
+      setError("No email provided.");
+      setLoading(false);
+      return;
+    }
+  
+    try {
+      const rawUser = await SecureStore.getItemAsync('user');
+      if (!rawUser) {
+        console.warn('No user found in SecureStore. Redirecting to login.');
+        navigation.replace('Login');
         return;
       }
-    
-      try {
-        const rawUser = await SecureStore.getItemAsync('user');
-        if (!rawUser) {
-          console.warn('No user found in SecureStore. Redirecting to login.');
-          navigation.replace('Login');
-          return;
-        }
 
-        const currentUserParsed = JSON.parse(rawUser);
-        const currentUserEmail = currentUserParsed?.email;
-        const currentUid = currentUserParsed?.uid;
-        setCurrentUserUid(currentUid);
-        setIsOwnProfile(currentUserEmail === viewedEmail);
-    
-        // Fetch viewed user
-        const viewedUserResponse = await axios.post("https://geospotbackend.onrender.com/UserProfilePage", {
-          email: viewedEmail,
-        });
-        const viewedUserData = viewedUserResponse.data;
-    
-        // Fetch current user 
-        const currentUserResponse = await axios.post("https://geospotbackend.onrender.com/UserProfilePage", {
-          email: currentUserEmail,
-        });
-        const currentUserData = currentUserResponse.data;
-    
-        //Check if current user follows the viewed user
-        const followingArray = currentUserData.following || [];
-        const isFollowing = followingArray.some(f => {
-          if (typeof f === 'string') {
-            return f === viewedUserData.uid;
-          } else if (f?.uid) {
-            return f.uid === viewedUserData.uid;
-          }
-          return false;
-        });
-    
-        setIsFollowingViewedUser(isFollowing);
-    
-        //Set viewed user's data (not current user)
-        const cleanedFollowing = (viewedUserData.following || []).map(f =>
-          typeof f === 'string' ? { uid: f } : f
-        );
-    
-        setUser({
-          ...viewedUserData,
-          following: cleanedFollowing,
-        });
-    
-        setBioInput(viewedUserData.bio || '');
-        setUsernameInput(viewedUserData.username || '');
-    
-        if (Array.isArray(viewedUserData.photos)) {
-          setPhotoUrls(viewedUserData.photos.map(url => ({
-            url,
-            postedBy: viewedUserData.username,
-            date: new Date().toLocaleDateString('en-US'),
-          })));
-        } else {
-          setPhotoUrls([]); // fallback if no photos
-        }
-              
-      } catch (err) {
-        console.error("Error loading profile:", err);
-        setError("Failed to load user data.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    
+      const currentUserParsed = JSON.parse(rawUser);
+      const currentUserEmail = currentUserParsed?.email;
+      const currentUid = currentUserParsed?.uid;
+      setCurrentUserUid(currentUid);
+      setIsOwnProfile(currentUserEmail === viewedEmail);
   
-    fetchUserData();
+      // Fetch viewed user
+      const viewedUserResponse = await axios.post("https://geospotbackend.onrender.com/UserProfilePage", {
+        email: viewedEmail,
+      });
+      const viewedUserData = viewedUserResponse.data;
+  
+      // Fetch current user 
+      const currentUserResponse = await axios.post("https://geospotbackend.onrender.com/UserProfilePage", {
+        email: currentUserEmail,
+      });
+      const currentUserData = currentUserResponse.data;
+  
+      //Check if current user follows the viewed user
+      const followingArray = currentUserData.following || [];
+      const isFollowing = followingArray.some(f => {
+        if (typeof f === 'string') {
+          return f === viewedUserData.uid;
+        } else if (f?.uid) {
+          return f.uid === viewedUserData.uid;
+        }
+        return false;
+      });
+  
+      setIsFollowingViewedUser(isFollowing);
+  
+      //Set viewed user's data (not current user)
+      const cleanedFollowing = (viewedUserData.following || []).map(f =>
+        typeof f === 'string' ? { uid: f } : f
+      );
+  
+      setUser({
+        ...viewedUserData,
+        following: cleanedFollowing,
+      });
+  
+      setBioInput(viewedUserData.bio || '');
+      setUsernameInput(viewedUserData.username || '');
+  
+      // Fetch user's posts from PostModel
+      const postsResponse = await axios.get(`https://geospotbackend.onrender.com/userPosts/${viewedUserData.uid}`);
+      const posts = postsResponse.data || [];
+
+      setPhotoUrls(posts.map(post => ({
+        url: post.imageUrl,
+        postedBy: post.username,
+        date: new Date(post.date).toLocaleDateString('en-US'),
+      })));
+
+            
+    } catch (err) {
+      console.error("Error loading profile:", err);
+      setError("Failed to load user data.");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+
+  useEffect(() => {
+    if (viewedEmail) {
+      fetchUserData();
+    }
   }, [viewedEmail]);
+  
   
   const pickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -330,10 +343,19 @@ const handleUnfollow = async (targetUserId) => {
 <View style={{ flexDirection: 'row', justifyContent: 'flex-start', marginTop: 20, marginBottom: 10 }}>
 
   {!isOwnProfile ? (
-    <TouchableOpacity onPress={() => {
-      AsyncStorage.getItem('userEmail').then(myEmail => {
-        navigation.navigate("UserProfilePage", { email: myEmail });
-      });
+    <TouchableOpacity onPress={async () => {
+      try {
+        const rawUser = await SecureStore.getItemAsync('user');
+        if (rawUser) {
+          const parsedUser = JSON.parse(rawUser);
+          navigation.navigate("UserProfilePage", { email: parsedUser.email });
+        } else {
+          console.warn("No user in SecureStore, redirecting to Login");
+          navigation.replace("Login");
+        }
+      } catch (error) {
+        console.error("Error navigating back to own profile:", error);
+      }
     }}>
       <Ionicons name="arrow-back-outline" size={30} color="#68d391" />
     </TouchableOpacity>
@@ -478,18 +500,25 @@ const handleUnfollow = async (targetUserId) => {
         <Text style={styles.photosTitle}>Photos</Text>
       </View>
       <View style={styles.photosContainer}>
-      {photoUrls.map((photo, index) => (
-        <TouchableOpacity
-          key={index}
-          onPress={() => {
-            setSelectedPhoto(photo);  
-            setModalVisible(true);  
-          }}
-        >
-          <Image source={{ uri: photo.url }} style={styles.photo} />
-        </TouchableOpacity>
-      ))}
-      </View>
+  {photoUrls.length === 0 ? (
+    <Text style={{ color: "#aaa", textAlign: "center", width: "100%", marginVertical: 10 }}>
+      No Photos Yet
+    </Text>
+  ) : (
+    photoUrls.map((photo) => (
+      <TouchableOpacity
+        key={photo.url}
+        onPress={() => {
+          setSelectedPhoto(photo);
+          setModalVisible(true);
+        }}
+      >
+        <Image source={{ uri: photo.url }} style={styles.photo} />
+      </TouchableOpacity>
+    ))
+  )}
+</View>
+
 
       {/*Open Image*/}
       <Modal
@@ -762,10 +791,13 @@ const handleUnfollow = async (targetUserId) => {
               }}
             >
               <TouchableOpacity
-                onPress={() => navigation.navigate("UserProfilePage", {
-                  email: resultUser.email,   
-                  uid: resultUser.uid        
-                })}
+                onPress={() => {
+                  setAddFriendsModalVisible(false); // 👈 close modal
+                  navigation.navigate("UserProfilePage", {
+                    email: resultUser.email,
+                    uid: resultUser.uid
+                  });
+                }}
                 style={{ flex: 1 }}
               >
                 <View>
@@ -1010,12 +1042,12 @@ const styles = StyleSheet.create({
   },
   
   photosContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    marginBottom: 20,
-    minHeight: 100, 
-  },
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+    padding: 0,
+    margin: -1, // removes spacing gap
+  },  
   photo: {
     width: 100,
     height: 100,

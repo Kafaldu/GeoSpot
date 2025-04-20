@@ -460,6 +460,16 @@ app.get('/getCurrentUserEmail', (req, res) => {
   }
 });
 
+app.get('/userPosts/:uid', async (req, res) => {
+  try {
+    const posts = await PostModel.find({ userId: req.params.uid }).sort({ date: -1 });
+    res.json(posts);
+  } catch (err) {
+    console.error("Error fetching user posts:", err);
+    res.status(500).json({ message: "Failed to load posts", error: err });
+  }
+});
+
 
 
 
