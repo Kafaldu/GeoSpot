@@ -38,11 +38,43 @@ const MapScreen = () => {
   const [customRevealTime, setCustomRevealTime] = useState(null);
   const [availableLocations, setAvailableLocations] = useState([]);
   const [distanceToDestination, setDistanceToDestination] = useState(null);
+  const [isUsingCachedData, setIsUsingCachedData] = useState(false);
+  const [offlineMode, setOfflineMode] = useState(false);
+  const [offlineModalVisible, setOfflineModalVisible] = useState(false);
+  const [lastCacheUpdateTime, setLastCacheUpdateTime] = useState(null);
 
   const isNearDestination = location && destination && (
     Math.abs(location.latitude - destination.latitude) < 0.001 &&
     Math.abs(location.longitude - destination.longitude) < 0.001
   );
+
+  // Function to cache locations data
+  const cacheLocations = async (locations) => {
+    try {
+      await AsyncStorage.setItem('cachedLocations', JSON.stringify(locations));
+      await AsyncStorage.setItem('locationsCacheTime', new Date().toISOString());
+      console.log('Locations cached successfully');
+    } catch (error) {
+      console.error('Error caching locations:', error);
+    }
+  };
+
+  // Function to get cached locations
+  const getCachedLocations = async () => {
+    try {
+      const cachedData = await AsyncStorage.getItem('cachedLocations');
+      const cacheTime = await AsyncStorage.getItem('locationsCacheTime');
+      
+      if (cachedData) {
+        setLastCacheUpdateTime(cacheTime ? new Date(cacheTime) : null);
+        return JSON.parse(cachedData);
+      }
+      return null;
+    } catch (error) {
+      console.error('Error retrieving cached locations:', error);
+      return null;
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -71,17 +103,95 @@ const MapScreen = () => {
   useEffect(() => {
     const fetchLocations = async () => {
       try {
+        // Try to fetch from API first
         const res = await fetch('https://geospotbackend.onrender.com/api/locations');
         const data = await res.json();
         console.log('📍 Available locations:', data);
+        
+        if (!data || data.length === 0) {
+          throw new Error('No locations returned from API');
+        }
+        
+        // Cache the fresh data
+        await cacheLocations(data);
         setAvailableLocations(data);
+        setIsUsingCachedData(false);
+        setOfflineMode(false);
+        
       } catch (err) {
         console.error('Failed to fetch locations:', err);
+        
+        // If API fetch fails, try to use cached data
+        const cachedLocations = await getCachedLocations();
+        if (cachedLocations && cachedLocations.length > 0) {
+          console.log('Using cached locations data:', cachedLocations);
+          setAvailableLocations(cachedLocations);
+          setIsUsingCachedData(true);
+          setOfflineMode(true);
+          setOfflineModalVisible(true);
+        } else {
+          console.log('No cached data available, using fallback locations');
+          // Use a set of default locations as fallback
+          const fallbackLocations = [
+            {
+              name: "University of Florida",
+              description: "The University of Florida campus in Gainesville.",
+              coordinates: {
+                lat: 29.643946,
+                lng: -82.350482
+              }
+            },
+            {
+              name: "Ben Hill Griffin Stadium",
+              description: "The Swamp - Home of the Florida Gators football team.",
+              coordinates: {
+                lat: 29.650180,
+                lng: -82.347850
+              }
+            }
+          ];
+          
+          setAvailableLocations(fallbackLocations);
+          setIsUsingCachedData(true);
+          setOfflineMode(true);
+          setOfflineModalVisible(true);
+          
+          // Set destination to a fallback location
+          const randomLocation = fallbackLocations[Math.floor(Math.random() * fallbackLocations.length)];
+          setDestination({
+            latitude: randomLocation.coordinates.lat,
+            longitude: randomLocation.coordinates.lng
+          });
+          setHintText(randomLocation.description || 'No hint available');
+        }
       }
     };
   
     fetchLocations();
   }, []);
+
+  // Refresh data function
+  const handleRefreshData = async () => {
+    try {
+      setOfflineMode(false);
+      const res = await fetch('https://geospotbackend.onrender.com/api/locations');
+      const data = await res.json();
+      
+      if (!data || data.length === 0) {
+        throw new Error('No locations returned from API');
+      }
+      
+      await cacheLocations(data);
+      setAvailableLocations(data);
+      setIsUsingCachedData(false);
+      setOfflineModalVisible(false);
+      Alert.alert('Connected', 'Successfully refreshed data from server');
+      
+    } catch (err) {
+      console.error('Failed to refresh data:', err);
+      Alert.alert('Still Offline', 'Could not connect to server. Using cached data.');
+    }
+  };
 
   useEffect(() => {
     if (isRevealed && location && destination) {
@@ -107,7 +217,7 @@ const MapScreen = () => {
   
       if (now >= revealTime) {
         if (!isRevealed) setIsRevealed(true); 
-        setTimeUntilReveal("📍 Today’s spot is revealed!");
+        setTimeUntilReveal("📍 Today's spot is revealed!");
       } else {
         const diff = revealTime - now;
         const hrs = Math.floor(diff / (1000 * 60 * 60));
@@ -302,8 +412,20 @@ const MapScreen = () => {
 
   return (
     <View style={styles.container}>
+      {offlineMode && (
+        <View style={styles.offlineBanner}>
+          <Text style={styles.offlineText}>Offline Mode - Using Cached Data</Text>
+          <TouchableOpacity 
+            style={styles.refreshButton}
+            onPress={handleRefreshData}
+          >
+            <Text style={styles.refreshButtonText}>Refresh</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      
       <MapView
-        style={styles.map}
+        style={[styles.map, offlineMode && { marginTop: 30 }]}
         region={{
           latitude: location.latitude,
           longitude: location.longitude,
@@ -322,7 +444,7 @@ const MapScreen = () => {
         )}
       </MapView>
 
-      <View style={styles.overlay}>
+      <View style={[styles.overlay, offlineMode && { top: 70 }]}>
         <Text style={styles.revealLabel}>{timeUntilReveal}</Text>
         {isRevealed && (
           <Text style={styles.distanceLabel}>
@@ -368,6 +490,41 @@ const MapScreen = () => {
           </View>
         </View>
       </Modal>
+      
+      <Modal
+        visible={offlineModalVisible}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setOfflineModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Offline Mode</Text>
+            <Text style={styles.modalText}>
+              Unable to connect to the server. Using cached location data.
+            </Text>
+            {lastCacheUpdateTime && (
+              <Text style={styles.cacheTimeText}>
+                Last updated: {lastCacheUpdateTime.toLocaleString()}
+              </Text>
+            )}
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={styles.modalButton}
+                onPress={handleRefreshData}
+              >
+                <Text style={styles.modalButtonText}>Try Again</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.continueButton]}
+                onPress={() => setOfflineModalVisible(false)}
+              >
+                <Text style={styles.modalButtonText}>Continue</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -389,8 +546,12 @@ const mapStyles = [
 
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  map: { flex: 1 },
+  container: { 
+    flex: 1 
+  },
+  map: { 
+    flex: 1 
+  },
   overlay: {
     position: 'absolute',
     top: 40,
@@ -399,15 +560,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   revealLabel: {
-    backgroundColor: '#4a5568',
-    color: '#68d391',
-    padding: 10,
-    borderRadius: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    color: 'white',
+    fontSize: 16,
     fontWeight: 'bold',
+    padding: 10,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  distanceLabel: {
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    color: 'white',
+    fontSize: 14,
+    marginTop: 10,
+    padding: 8,
+    borderRadius: 15,
+    overflow: 'hidden',
+  },
+  hintButton: {
+    position: 'absolute',
+    bottom: 100,
+    left: 20,
+    backgroundColor: '#f6ad55',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
   },
   cameraButton: {
     position: 'absolute',
-    bottom: 120,
+    bottom: 100,
     right: 20,
     backgroundColor: '#4299e1',
     width: 60,
@@ -415,76 +603,120 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 10,
-  },  
-  hintButton: {
-    position: 'absolute',
-    bottom: 120,
-    left: 20,
-    backgroundColor: '#4299e1',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
-  },  
-  testButtonsContainer: {
-    position: 'absolute',
-    bottom: 20, 
-    width: '100%',
-    alignItems: 'center',
-    gap: 10,
-  },
-  
-  testButton: {
-    backgroundColor: '#f6ad55',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    width: 200,
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  testButtonText: {
-    color: '#2d3748',
-    fontWeight: 'bold',
-    textAlign: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
   },
   buttonText: {
-    fontSize: 16,
+    fontSize: 24,
     color: '#2d3748',
-    fontWeight: 'bold',
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#000000aa',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    backgroundColor: '#2d3748',
+    backgroundColor: '#4a5568',
     padding: 20,
     borderRadius: 10,
+    alignItems: 'center',
     width: '80%',
   },
-  modalText: {
-    color: '#fff',
+  modalTitle: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: 'bold',
     marginBottom: 10,
+  },
+  modalText: {
+    color: '#ffffff',
+    textAlign: 'center',
+    fontSize: 16,
+    marginBottom: 15,
   },
   closeButton: {
     backgroundColor: '#f6ad55',
     padding: 10,
-    borderRadius: 6,
+    borderRadius: 5,
+    minWidth: 100,
     alignItems: 'center',
   },
-  distanceLabel: {
-    backgroundColor: '#4a5568',
-    color: '#68d391',
-    padding: 10,
-    borderRadius: 10,
+  testButtonsContainer: {
+    position: 'absolute',
+    bottom: 20,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    paddingHorizontal: 10,
+    gap: 10,
+  },
+  testButton: {
+    backgroundColor: 'rgba(66, 153, 225, 0.6)',
+    padding: 8,
+    paddingHorizontal: 12,
+    borderRadius: 5,
+  },
+  testButtonText: {
+    color: 'white',
     fontWeight: 'bold',
-    marginTop: 5,
+  },
+  offlineBanner: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#e53e3e',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    zIndex: 100,
+  },
+  offlineText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  refreshButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  refreshButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  cacheTimeText: {
+    color: '#cbd5e0',
+    fontSize: 12,
+    marginBottom: 15,
+    fontStyle: 'italic',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  modalButton: {
+    backgroundColor: '#4299e1',
+    padding: 10,
+    borderRadius: 5,
+    minWidth: '45%',
+    alignItems: 'center',
+  },
+  continueButton: {
+    backgroundColor: '#48bb78',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
 
